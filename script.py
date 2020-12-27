@@ -13,9 +13,10 @@ class User:
 
     def __repr__(self):
         return '(uid:' + self.uid + \
-               ', alias: ' + self.alias + \
+               ', alias: @' + self.alias + \
                ', name: ' + self.name + \
-               ', surname: ' + self.surname + ')'
+               ', surname: ' + self.surname + \
+               ', queues: ' + self.my_queues.__repr__() + ')'
 
 
 class Order:
@@ -58,9 +59,55 @@ def add_user():
         users[uid] = User(uid=uid, alias=alias, name=name, surname=surname)
         alias_dict[uid] = alias
         uid_dict[alias] = uid
+        message_add_user = 'You were successfully added to the list of users.'
     else:
-        message = 'You are already in the list of users.'
-        print(message)
+        message_add_user = 'You are already in the list of users.'
+    print(message_add_user)
+
+
+def me():
+    # display information about the user
+    uid = input()
+    message_me = users[uid]
+    print(message_me)
+
+
+def change_alias():
+    # change alias of the user
+    uid = input()
+    alias = input()
+    previous_alias = users[uid].alias
+    users[uid].alias = alias
+
+    uid_temp = ''
+    for uid_alias, alias_alias in alias_dict.items():
+        if alias_alias == previous_alias:
+            uid_temp = uid_alias
+    alias_dict[uid_temp] = alias
+
+    uid_dict[alias] = uid_dict[previous_alias]
+    uid_dict.pop(previous_alias)
+
+    message_change_alias = 'Your alias was changed to ' + alias + '.'
+    print(message_change_alias)
+
+
+def change_name():
+    # change name of the user
+    uid = input()
+    name = input()
+    users[uid].name = name
+    message_change_name = 'Your name was changed to ' + name + '.'
+    print(message_change_name)
+
+
+def change_surname():
+    # change surname of the user
+    uid = input()
+    surname = input()
+    users[uid].surname = surname
+    message_change_surname = 'Your surname was changed to ' + surname + '.'
+    print(message_change_surname)
 
 
 def create_queue():
@@ -69,9 +116,10 @@ def create_queue():
 
     if title not in titles:
         queues[title] = Order(title=title)
+        message_create_queue = 'Queue ' + title + ' was created.'
     else:
-        message = 'Queue with specified title is already exists'
-        print(message)
+        message_create_queue = 'Queue with specified title is already exists.'
+    print(message_create_queue)
 
 
 def join_queue():
@@ -79,12 +127,16 @@ def join_queue():
     title = input()
     uid = input()
 
-    users[uid].my_queues.append(title)
     if title in titles:
-        queues[title].queue.append([uid, 0])
+        if title not in users[uid].my_queues:
+            queues[title].queue.append([uid, 0])
+            users[uid].my_queues.append(title)
+            message_join_queue = 'You are now in the queue ' + title + '.'
+        else:
+            message_join_queue = 'You are already in this queue.'
     else:
-        message = 'Queue with specified title does not exist'
-        print(message)
+        message_join_queue = 'Queue with specified title does not exist.'
+    print(message_join_queue)
 
 
 def quit_queue():
@@ -92,24 +144,17 @@ def quit_queue():
     title = input()
     uid = input()
 
-    users[uid].my_queues.remove(title)
-    for order in queues.items():
-        key = order[0]
-        for pair in order[1].queue:
-            if pair[0] == uid:
-                index = order[1].queue.index(pair)
-                queues[key].queue.pop(index)
-
     if title in titles:
-        for order in queues.items():
-            key = order[0]
-            for pair in order[1].queue:
-                if pair[0] == uid:
-                    index = order[1].queue.index(pair)
-                    queues[title].queue.pop(index)
+        for pair in queues[title].queue:
+            if pair[0] == uid:
+                index = queues[title].queue.index(pair)
+                queues[title].queue.pop(index)
+                break
+        users[uid].my_queues.remove(title)
+        message_quit_queue = 'You are now out of queue ' + title + '.'
     else:
-        message = 'Queue with specified title does not exist'
-        print(message)
+        message_quit_queue = 'Queue with specified title does not exist.'
+    print(message_quit_queue)
 
 
 def remove_queue():
@@ -118,45 +163,84 @@ def remove_queue():
 
     if title in titles:
         queues.pop(title)
+        for user_id, user_details in users.items():
+            if title in user_details.my_queues:
+                user_details.my_queues.pop(user_details.my_queues.index(title))
+        message_remove_queue = 'Queue ' + title + ' was successfully removed.'
     else:
-        message = 'Queue with specified title does not exist'
-        print(message)
+        message_remove_queue = 'Queue with specified title does not exist.'
+    print(message_remove_queue)
 
 
 def remove_user():
     # delete the user
     uid = input()
+
     users.pop(uid)
+    alias = alias_dict[uid]
+    alias_dict.pop(uid)
+    uid_dict.pop(alias)
+
     for order in queues.items():
         key = order[0]
         for pair in order[1].queue:
             if pair[0] == uid:
                 index = order[1].queue.index(pair)
                 queues[key].queue.pop(index)
+    message_remove_user = 'Your account was successfully removed.'
+    print(message_remove_user)
 
 
 def get_queues():
     # get all queues
+    message_get_queues = ''
     for queue in queues.values():
-        print(queue.title)
+        message_get_queues += queue.title + '\n'
+    print(message_get_queues)
 
 
 def my_queues():
     # get my queues
     uid = input()
-    print(users[uid].my_queues)
+    message_my_queues = ''
+    for queue_title in users[uid].my_queues:
+        message_my_queues += queue_title + '\n'
+    print(message_my_queues)
 
 
-def current():
+def current_user():
     # get current user in order
     title = input()
-    print(queues[title].current)
+
+    if title in titles:
+        index_current = queues[title].current
+        uid_current = queues[title].queue[index_current][0]
+        message_current_user = alias_dict[uid_current]
+    else:
+        message_current_user = 'Queue with specified title does not exist.'
+    print(message_current_user)
 
 
-def next():
+def next_user():
     # get next user in order
+    uid = input()
     title = input()
-    queues[title].current = (queues[title].current + 1) % len(queues[title].queue)
+
+    if title in titles:
+        current = queues[title].current
+        if queues[title].queue[current][0] == uid:
+            if queues[title].queue[current][1] == 0:
+                queues[title].current = (queues[title].current + 1) % len(queues[title].queue)
+                current = queues[title].current
+                message_next_user = 'Turn went to ' + alias_dict[queues[title].queue[current][0]] + '.'
+            else:
+                queues[title].queue[current][1] -= 1
+                message_next_user = 'You have eliminated your skip.'
+        else:
+            message_next_user = 'It is not your turn.'
+    else:
+        message_next_user = 'Queue with specified title does not exist.'
+    print(message_next_user)
 
 
 def skip():
@@ -164,48 +248,65 @@ def skip():
     title = input()
     uid = input()
 
-    for order in queues.items():
-        key = order[0]
-        for pair in order[1].queue:
-            if pair[0] == uid:
-                index = order[1].queue.index(pair)
-                queues[title].queue[index][1] += 1
+    current = queues[title].current
+    if title not in titles:
+        message_skip = 'Queue with specified title does not exist.'
+    elif queues[title].queue[current][0] == uid:
+        queues[title].queue[current][1] += 1
+        queues[title].current = (queues[title].current + 1) % len(queues[title].queue)
+        message_skip = 'You have skipped your turn.'
+    else:
+        message_skip = 'Now it is not your turn.'
+    print(message_skip)
 
 
 def state():
     # get current state of all queues
+    message_state = ''
     for queue in queues.values():
-        print(queue.title)
+        message_state += queue.title + '\n'
         for person in queue.queue:
             uid = person[0]
             name_uid = users[uid].name
             surname_uid = users[uid].surname
 
             if queue.current == queue.queue.index(person):
-                print('> ' + name_uid + ' ' + surname_uid + ' : ' + str(person[1]))
+                message_state += '> ' + name_uid + ' ' + surname_uid + ' : ' + str(person[1]) + '\n'
             else:
-                print(name_uid + ' ' + surname_uid + ' : ' + str(person[1]))
+                message_state += '  ' + name_uid + ' ' + surname_uid + ' : ' + str(person[1]) + '\n'
+    print(message_state)
 
 
 def give():
     # give money to person with specified alias
-    # TODO: several people, all
 
     # who share money
     uid = input()
     # who take money
-    alias = input()
+    aliases = input().replace(' ', '').split(',')
     # amount of money
     money = int(input())
 
-    if debts[uid][uid_dict[alias]] == 0:
-        debts[uid_dict[alias]][uid] += money
-    elif debts[uid][uid_dict[alias]] <= money:
-        debts[uid_dict[alias]][uid] += money - debts[uid][uid_dict[alias]]
-        debts[uid][uid_dict[alias]] = 0
-    elif debts[uid][uid_dict[alias]] > money:
-        debts[uid][uid_dict[alias]] -= money
-        debts[uid_dict[alias]][uid] = 0
+    share_give = money / len(aliases)
+    for alias in aliases:
+        change_debts_dictionary(uid=uid, alias=alias, money=share_give)
+
+
+def change_debts_dictionary(uid, alias, money):
+    # update debts dictionary
+    if alias in uid_dict.keys():
+        if debts[uid][uid_dict[alias]] == 0:
+            debts[uid_dict[alias]][uid] += money
+        elif debts[uid][uid_dict[alias]] <= money:
+            debts[uid_dict[alias]][uid] += money - debts[uid][uid_dict[alias]]
+            debts[uid][uid_dict[alias]] = 0
+        elif debts[uid][uid_dict[alias]] > money:
+            debts[uid][uid_dict[alias]] -= money
+            debts[uid_dict[alias]][uid] = 0
+        message_change_debts = 'You have gave ' + str(money) + ' to @' + alias + '.\n'
+    else:
+        message_change_debts = 'There is no user with alias @' + alias
+    print(message_change_debts)
 
 
 def get_my_debts():
@@ -236,7 +337,7 @@ def get_my_services():
     message_details = 'Your service for the\n'
     for debt_key_1, debt_value_1 in debts.items():
         for debt_key_2, debt_value_2 in debt_value_1.items():
-            if debt_key_2 == uid:
+            if debt_key_2 == uid and debt_value_2 != 0:
                 total += debt_value_2
                 message_details += users[debt_key_1].name + ' ' + users[debt_key_1].surname + ' is ' + str(
                     debt_value_2) + '\n'
@@ -257,12 +358,17 @@ def share():
     # number of users
     number_users = len(users)
     # share for each user
-    share = money / number_users
+    share_money = money / (number_users - 1)
 
-    # TODO: send share to the give function
+    # update debts dictionary for all users
+    for user_uid, user_details in users.items():
+        if user_uid != uid:
+            alias = user_details.alias
+            change_debts_dictionary(uid=uid, alias=alias, money=share_money)
 
 
 def update_user_dictionary():
+    # auxiliary
     # update dictionary with debts
     for cur_uid_1 in uids:
         if cur_uid_1 in debts:
@@ -274,9 +380,22 @@ def update_user_dictionary():
                 arrears[cur_uid_2] = 0
         debts[cur_uid_1] = arrears
 
+    debt_delete_outer = ''
+    for debtor, people in debts.items():
+        if debtor not in uids:
+            debt_delete_outer = debtor
+        debt_delete_inner = ''
+        for person_uid, value_debt in people.items():
+            if person_uid not in uids:
+                debt_delete_inner = person_uid
+        if debt_delete_inner:
+            people.pop(debt_delete_inner)
+    if debt_delete_outer:
+        debts.pop(debt_delete_outer)
 
-# TODO: check presence of title and nicknames
-# TODO: me/change info
+
+# TODO: check functionality
+# TODO: fix messages
 if __name__ == "__main__":
     # read the command
     command = input()
@@ -290,6 +409,14 @@ if __name__ == "__main__":
         # run the command
         if command == 'add_user':
             add_user()
+        elif command == 'me':
+            me()
+        elif command == 'change_alias':
+            change_alias()
+        elif command == 'change_name':
+            change_name()
+        elif command == 'change_surname':
+            change_surname()
         elif command == 'create_queue':
             create_queue()
         elif command == 'join_queue':
@@ -304,10 +431,10 @@ if __name__ == "__main__":
             get_queues()
         elif command == 'my_queues':
             my_queues()
-        elif command == 'current':
-            current()
-        elif command == 'next':
-            next()
+        elif command == 'current_user':
+            current_user()
+        elif command == 'next_user':
+            next_user()
         elif command == 'skip':
             skip()
         elif command == 'state':
@@ -326,7 +453,8 @@ if __name__ == "__main__":
             print(message)
         update_user_dictionary()
 
-        print(users, queues, debts)
+        # for debugging
+        print(users, queues, debts, alias_dict, uid_dict, sep='\n')
 
         # read the command
         command = input()
