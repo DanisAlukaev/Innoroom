@@ -4,9 +4,33 @@ from users import users, alias_dict, uid_dict
 debts = {}
 
 
+def me(message):
+    # display information about the user
+    uid = message['from']['id']
+    message_me = users[uid].__str__()
+    # total debts
+    total_debts = 0
+    for creditor, value in debts[uid].items():
+        if value != 0:
+            # increase value of a total debt
+            total_debts += value
+    message_me += '\nTotal debt: ' + str(total_debts) + '.\n'
+    # total services
+    total_services = 0
+    message_details = 'Your service for the\n'
+    # find user in a list of creditors
+    for debt_key_1, debt_value_1 in debts.items():
+        for debt_key_2, debt_value_2 in debt_value_1.items():
+            if debt_key_2 == uid and debt_value_2 != 0:
+                total_services += debt_value_2
+    message_me += 'Total service: ' + str(total_services) + '.'
+    return message_me
+
+
 # TODO: include in share only aliases that are registered -> _change_debts_dictionary
 # TODO: concatenate all responses from _change_debts_dictionary
 # TODO: validator of message
+# TODO: replace @
 def give(message):
     """
     Give debt for specified users.
@@ -19,16 +43,17 @@ def give(message):
     alias = message['from']['username']
 
     money = int(message['text'].split(' ')[1])
-    aliases = message['text'].split(' ')[2:]
+    aliases = message['text'].replace('@', '').split(' ')[2:]
 
     share_give = money / len(aliases)
     aliases_str = ''
 
-    for alias in aliases:
-        aliases_str += '@' + alias + ' '
+    for alias_ in aliases:
+        aliases_str += alias_ + ' '
         # update debt list
-        _change_debts_dictionary(uid=uid, alias=alias, money=share_give)
-    message_give = '@' + alias + ', you have given ' + str(money) + ' to ' + aliases_str
+        _change_debts_dictionary(uid=uid, alias=alias_, money=share_give)
+    message_give = alias + ', you have given ' + str(money) + ' to ' + aliases_str
+
     return message_give
 
 
@@ -137,7 +162,7 @@ def share(message):
 
 
 # TODO: after each method call
-def _update_user_dictionary():
+def update_user_dictionary():
     """
     Update users' debts dictionary.
     """

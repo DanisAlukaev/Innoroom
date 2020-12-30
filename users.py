@@ -1,3 +1,6 @@
+import re
+
+
 class User:
     """
     Class describing the user of a bot.
@@ -60,7 +63,6 @@ def register(message):
     else:
         # create new user
         requests[uid] = User(uid=uid, alias=alias, name=name, surname=surname)
-        # TODO: remove
         alias_dict[uid] = alias
         uid_dict[alias] = uid
         # inform that the user was registered
@@ -76,38 +78,36 @@ def all_requests(message):
     return message_all_requests
 
 
-# TODO: validator of message
 def accept(message):
     alias = message['from']['username']
-    aliases = message['text'].replace('@', '').split(' ')[1:]
-    message_accept = '@' + alias + ', you have added new user(s)\n'
-    for alias in aliases:
-        users[uid_dict[alias]] = requests[uid_dict[alias]]
-        requests.pop(uid_dict[alias])
-        message_accept += '• @' + alias + '.\n'
+
+    if re.fullmatch(r'/accept( @\w+)+', message['text']):
+        aliases = message['text'].replace('@', '').split(' ')[1:]
+        message_accept = '@' + alias + ', you have added new user(s)\n'
+        for alias in aliases:
+            users[uid_dict[alias]] = requests[uid_dict[alias]]
+            requests.pop(uid_dict[alias])
+            message_accept += '• @' + alias + '.\n'
+    else:
+        message_accept = 'Message does not match the required format. Check rules in /help.'
     return message_accept
 
 
-# TODO: validator of message
 def decline(message):
     alias = message['from']['username']
-    aliases = message['text'].replace('@', '').split(' ')[1:]
 
-    message_decline = '@' + alias + ', you have declined request(s) of \n'
-    for alias in aliases:
-        uid_remove = uid_dict[alias]
-        uid_dict.pop(alias)
-        alias_dict.pop(uid_remove)
-        requests.pop(uid_remove)
-        message_decline += '• @' + alias + '.\n'
+    if re.fullmatch(r'/decline( @\w+)+', message['text']):
+        aliases = message['text'].replace('@', '').split(' ')[1:]
+        message_decline = '@' + alias + ', you have declined request(s) of \n'
+        for alias in aliases:
+            uid_remove = uid_dict[alias]
+            uid_dict.pop(alias)
+            alias_dict.pop(uid_remove)
+            requests.pop(uid_remove)
+            message_decline += '• @' + alias + '.\n'
+    else:
+        message_decline = 'Message does not match the required format. Check rules in /help.'
     return message_decline
-
-
-def me(message):
-    # display information about the user
-    uid = message['from']['id']
-    message_me = users[uid].__str__()
-    return message_me
 
 
 def update_me(message):
@@ -126,7 +126,6 @@ def update_me(message):
     # update information about the user
     users[uid].name = name
     users[uid].surname = surname
-    # TODO: remove previous alias
     previous_alias = users[uid].alias
     users[uid].alias = alias
     uid_temp = ''

@@ -23,7 +23,6 @@ async def start_message(message):
         "Powered by aiogram.")
 
 
-# TODO: include debts and services to /me
 @dp.message_handler(commands=['help'])
 async def help_message(message):
     await message.answer(
@@ -32,6 +31,7 @@ async def help_message(message):
         "<b>Manage</b> (only for administrators)\n"
         "/accept <b>username</b> [...] - accept request(s) of user(s)\n"
         "/all_requests - get all pending requests\n"
+        "/remove <b>username</b> [...] - remove user(s)\n"
         "/decline <b>username</b> [...] - decline request(s) of user(s)\n\n"
         "<b>Profile control</b>\n"
         "/register - register in the chat bot\n"
@@ -77,6 +77,7 @@ async def accept(message):
         reply = 'Allowed only for administrators.'
     else:
         reply = users.accept(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -86,6 +87,17 @@ async def decline(message):
         reply = 'Allowed only for administrators.'
     else:
         reply = users.decline(message)
+    debts.update_user_dictionary()
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['remove'])
+async def remove(message):
+    if message['from']['id'] not in admin_uid:
+        reply = 'Allowed only for administrators.'
+    else:
+        reply = queues.remove_user(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -95,19 +107,22 @@ async def all_requests(message):
         reply = 'Allowed only for administrators.'
     else:
         reply = users.all_requests(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['register'])
 async def register(message):
     reply = users.register(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['me'])
 @authorization
 async def me(message):
-    reply = users.me(message)
+    reply = debts.me(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -115,6 +130,7 @@ async def me(message):
 @authorization
 async def update_me(message):
     reply = users.update_me(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -122,6 +138,7 @@ async def update_me(message):
 @authorization
 async def leave(message):
     reply = queues.leave(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -129,6 +146,7 @@ async def leave(message):
 @authorization
 async def create_queue(message):
     reply = queues.create_queue(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -136,6 +154,7 @@ async def create_queue(message):
 @authorization
 async def join_queue(message):
     reply = queues.join_queue(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -143,6 +162,7 @@ async def join_queue(message):
 @authorization
 async def quit_queue(message):
     reply = queues.quit_queue(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -150,6 +170,7 @@ async def quit_queue(message):
 @authorization
 async def remove_queue(message):
     reply = queues.remove_queue(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -157,6 +178,7 @@ async def remove_queue(message):
 @authorization
 async def get_queues(message):
     reply = queues.get_queues(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -164,6 +186,7 @@ async def get_queues(message):
 @authorization
 async def my_queues(message):
     reply = queues.my_queues(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -171,6 +194,7 @@ async def my_queues(message):
 @authorization
 async def current_user(message):
     reply = queues.current_user(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -178,6 +202,7 @@ async def current_user(message):
 @authorization
 async def next_user(message):
     reply = queues.next_user(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -185,6 +210,7 @@ async def next_user(message):
 @authorization
 async def skip(message):
     reply = queues.skip(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -192,6 +218,7 @@ async def skip(message):
 @authorization
 async def get_states(message):
     reply = queues.get_states(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -199,6 +226,7 @@ async def get_states(message):
 @authorization
 async def give(message):
     reply = debts.give(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -206,6 +234,7 @@ async def give(message):
 @authorization
 async def get_my_debts(message):
     reply = debts.get_my_debts(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -213,6 +242,7 @@ async def get_my_debts(message):
 @authorization
 async def get_my_services(message):
     reply = debts.get_my_services(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 
@@ -220,6 +250,7 @@ async def get_my_services(message):
 @authorization
 async def share(message):
     reply = debts.share(message)
+    debts.update_user_dictionary()
     await message.answer(reply)
 
 

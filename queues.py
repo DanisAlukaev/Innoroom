@@ -1,4 +1,5 @@
 from users import users, alias_dict, uid_dict
+import re
 
 
 class Order:
@@ -35,7 +36,6 @@ def leave(message):
     # remove from the list of users
     users.pop(uid)
 
-    # TODO: remove
     alias = alias_dict[uid]
     alias_dict.pop(uid)
     uid_dict.pop(alias)
@@ -52,7 +52,40 @@ def leave(message):
     return message_remove_user
 
 
-# TODO: validator of message
+def remove_user(message):
+    """
+    Remove user of the bot.
+
+    :param message: user's message.
+    :return: reply.
+    """
+    # get information about the user
+    uid = message['from']['id']
+    if re.fullmatch(r'/remove( @\w+)+', message['text']):
+        aliases = message['text'].replace('@', '').split(' ')[1:]
+        message_remove_user = '@' + alias_dict[uid] + ', you have removed user(s)\n'
+        for alias in aliases:
+            uid_ = uid_dict[alias]
+
+            # remove from the list of users
+            users.pop(uid_)
+            alias_dict.pop(uid_)
+            uid_dict.pop(alias)
+
+            # remove user from each queue
+            for title, details in queues.items():
+                for user_pair in details.queue:
+                    if user_pair[0] == uid_:
+                        # get index of user pair
+                        index = details.queue.index(user_pair)
+                        # remove user pair from list
+                        queues[title].queue.pop(index)
+            message_remove_user += '• @' + alias + '.\n'
+    else:
+        message_remove_user = 'Message does not match the required format. Check rules in /help.'
+    return message_remove_user
+
+
 def create_queue(message):
     """
     Create new queue.
@@ -60,21 +93,23 @@ def create_queue(message):
     :param message: user's message.
     :return: reply.
     """
-    # get information about the user
-    title = message['text'].split(' ')[1]
 
-    titles = queues.keys()
-    if title not in titles:
-        # create new queue
-        queues[title] = Order(title=title)
-        message_create_queue = 'Queue ' + title + ' was created.'
+    if re.fullmatch(r'/create_queue \w+', message['text']):
+        # get information about the user
+        title = message['text'].split(' ')[1]
+
+        titles = queues.keys()
+        if title not in titles:
+            # create new queue
+            queues[title] = Order(title=title)
+            message_create_queue = 'Queue ' + title + ' was created.'
+        else:
+            message_create_queue = 'Queue with specified title is already exists.'
     else:
-        message_create_queue = 'Queue with specified title is already exists.'
+        message_create_queue = 'Message does not match the required format. Check rules in /help.'
     return message_create_queue
 
 
-# TODO: check uids
-# TODO: validator of message
 def join_queue(message):
     """
     Join to the queue.
@@ -85,27 +120,29 @@ def join_queue(message):
     # get information about the user
     uid = message['from']['id']
     alias = message['from']['username']
-    title = message['text'].split(' ')[1]
 
-    titles = queues.keys()
-    if uid not in users.keys():
-        message_join_queue = '@' + alias + ', you are not a user of a bot.'
-    elif title in titles:
-        # check whether user is already in queue
-        if title not in users[uid].my_queues:
-            # set new tuple of id and initial number of skips
-            queues[title].queue.append([uid, 0])
-            # add queue to internal list of queues
-            users[uid].my_queues.append(title)
-            message_join_queue = '@' + alias + ', you are now in the queue ' + title + '.'
+    if re.fullmatch(r'/join_queue \w+', message['text']):
+        title = message['text'].split(' ')[1]
+        titles = queues.keys()
+        if uid not in users.keys():
+            message_join_queue = '@' + alias + ', you are not a user of a bot.'
+        elif title in titles:
+            # check whether user is already in queue
+            if title not in users[uid].my_queues:
+                # set new tuple of id and initial number of skips
+                queues[title].queue.append([uid, 0])
+                # add queue to internal list of queues
+                users[uid].my_queues.append(title)
+                message_join_queue = '@' + alias + ', you are now in the queue ' + title + '.'
+            else:
+                message_join_queue = '@' + alias + ', you are already in this queue.'
         else:
-            message_join_queue = '@' + alias + ', you are already in this queue.'
+            message_join_queue = 'Queue with specified title does not exist.'
     else:
-        message_join_queue = 'Queue with specified title does not exist.'
+        message_join_queue = 'Message does not match the required format. Check rules in /help.'
     return message_join_queue
 
 
-# TODO: validator of message
 def quit_queue(message):
     """
     Quit from the queue.
@@ -116,27 +153,29 @@ def quit_queue(message):
     # get information about the user
     uid = message['from']['id']
     alias = message['from']['username']
-    title = message['text'].split(' ')[1]
 
-    titles = queues.keys()
-    if title in titles:
-        # remove user from a list of queues
-        for pair in queues[title].queue:
-            if pair[0] == uid:
-                # get the index of user in the list
-                index = queues[title].queue.index(pair)
-                # remove user from the list
-                queues[title].queue.pop(index)
-                break
-        # remove queue from user's internal data
-        users[uid].my_queues.remove(title)
-        message_quit_queue = '@' + alias + ', you are now out of the queue ' + title + '.'
+    if re.fullmatch(r'/quit_queue \w+', message['text']):
+        title = message['text'].split(' ')[1]
+        titles = queues.keys()
+        if title in titles:
+            # remove user from a list of queues
+            for pair in queues[title].queue:
+                if pair[0] == uid:
+                    # get the index of user in the list
+                    index = queues[title].queue.index(pair)
+                    # remove user from the list
+                    queues[title].queue.pop(index)
+                    break
+            # remove queue from user's internal data
+            users[uid].my_queues.remove(title)
+            message_quit_queue = '@' + alias + ', you are now out of the queue ' + title + '.'
+        else:
+            message_quit_queue = 'Queue with specified title does not exist.'
     else:
-        message_quit_queue = 'Queue with specified title does not exist.'
+        message_quit_queue = 'Message does not match the required format. Check rules in /help.'
     return message_quit_queue
 
 
-# TODO: validator of message
 def remove_queue(message):
     """
     Remove queue with a given title.
@@ -144,20 +183,22 @@ def remove_queue(message):
     :param message: user's message.
     :return: reply.
     """
-    # get information about the user
-    title = message['text'].split(' ')[1]
-
-    titles = queues.keys()
-    if title in titles:
-        # remove queue from list of queues
-        queues.pop(title)
-        # remove all entries of queue in users
-        for user_id, user_details in users.items():
-            if title in user_details.my_queues:
-                user_details.my_queues.pop(user_details.my_queues.index(title))
-        message_remove_queue = 'Queue ' + title + ' was successfully removed.'
+    if re.fullmatch(r'/remove_queue \w+', message['text']):
+        # get information about the user
+        title = message['text'].split(' ')[1]
+        titles = queues.keys()
+        if title in titles:
+            # remove queue from list of queues
+            queues.pop(title)
+            # remove all entries of queue in users
+            for user_id, user_details in users.items():
+                if title in user_details.my_queues:
+                    user_details.my_queues.pop(user_details.my_queues.index(title))
+            message_remove_queue = 'Queue ' + title + ' was successfully removed.'
+        else:
+            message_remove_queue = 'Queue with specified title does not exist.'
     else:
-        message_remove_queue = 'Queue with specified title does not exist.'
+        message_remove_queue = 'Message does not match the required format. Check rules in /help.'
     return message_remove_queue
 
 
@@ -192,7 +233,6 @@ def my_queues(message):
     return message_my_queues
 
 
-# TODO: validator of message
 def current_user(message):
     """
     Get current user in a queue.
@@ -200,22 +240,23 @@ def current_user(message):
     :param message: user's message.
     :return: reply.
     """
-    # get information about the user
-    title = message['text'].split(' ')[1]
-
-    titles = queues.keys()
-    if title in titles:
-        # get index of a current user in a queue in list
-        index_current = queues[title].current
-        # get id of a current user
-        uid_current = queues[title].queue[index_current][0]
-        message_current_user = '@' + alias_dict[uid_current] + ', it is now your turn in queue' + title + '.'
+    if re.fullmatch(r'/current_user \w+', message['text']):
+        # get information about the user
+        title = message['text'].split(' ')[1]
+        titles = queues.keys()
+        if title in titles:
+            # get index of a current user in a queue in list
+            index_current = queues[title].current
+            # get id of a current user
+            uid_current = queues[title].queue[index_current][0]
+            message_current_user = '@' + alias_dict[uid_current] + ', it is now your turn in queue' + title + '.'
+        else:
+            message_current_user = 'Queue with specified title does not exist.'
     else:
-        message_current_user = 'Queue with specified title does not exist.'
+        message_current_user = 'Message does not match the required format. Check rules in /help.'
     return message_current_user
 
 
-# TODO: validator of message
 def next_user(message):
     """
     Pass turn to the next user.
@@ -226,32 +267,34 @@ def next_user(message):
     # get information about the user
     uid = message['from']['id']
     alias = message['from']['username']
-    title = message['text'].split(' ')[1]
 
-    titles = queues.keys()
-    if title in titles:
-        # get current user in a queue
-        current = queues[title].current
-        # check whether user is current
-        if queues[title].queue[current][0] == uid:
-            # check whether user had skipped turns
-            if queues[title].queue[current][1] == 0:
-                # pass turn to next user
-                queues[title].current = (queues[title].current + 1) % len(queues[title].queue)
-                current = queues[title].current
-                message_next_user = 'Turn went to ' + alias_dict[queues[title].queue[current][0]] + '.'
+    if re.fullmatch(r'/next_user \w+', message['text']):
+        title = message['text'].split(' ')[1]
+        titles = queues.keys()
+        if title in titles:
+            # get current user in a queue
+            current = queues[title].current
+            # check whether user is current
+            if queues[title].queue[current][0] == uid:
+                # check whether user had skipped turns
+                if queues[title].queue[current][1] == 0:
+                    # pass turn to next user
+                    queues[title].current = (queues[title].current + 1) % len(queues[title].queue)
+                    current = queues[title].current
+                    message_next_user = 'Turn went to ' + alias_dict[queues[title].queue[current][0]] + '.'
+                else:
+                    # eliminate one skip
+                    queues[title].queue[current][1] -= 1
+                    message_next_user = '@' + alias + ', you have eliminated your skip.'
             else:
-                # eliminate one skip
-                queues[title].queue[current][1] -= 1
-                message_next_user = '@' + alias + ', you have eliminated your skip.'
+                message_next_user = '@' + alias + ', it is not your turn.'
         else:
-            message_next_user = '@' + alias + ', it is not your turn.'
+            message_next_user = 'Queue with specified title does not exist.'
     else:
-        message_next_user = 'Queue with specified title does not exist.'
+        message_next_user = 'Message does not match the required format. Check rules in /help.'
     return message_next_user
 
 
-# TODO: validator of message
 def skip(message):
     """
     Skip the turn for a current user in a queue.
@@ -262,23 +305,25 @@ def skip(message):
     # get information about the user
     uid = message['from']['id']
     alias = message['from']['username']
-    title = message['text'].split(' ')[1]
-
-    titles = queues.keys()
-    if title in titles:
-        # get index of a current user in a queue in list
-        current = queues[title].current
-        # check whether user is current
-        if queues[title].queue[current][0] == uid:
-            # increment skips' number of a current user
-            queues[title].queue[current][1] += 1
-            # pass turn to the next user
-            queues[title].current = (queues[title].current + 1) % len(queues[title].queue)
-            message_skip = '@' + alias + ', you have skipped your turn.'
+    if re.fullmatch(r'/skip \w+', message['text']):
+        title = message['text'].split(' ')[1]
+        titles = queues.keys()
+        if title in titles:
+            # get index of a current user in a queue in list
+            current = queues[title].current
+            # check whether user is current
+            if queues[title].queue[current][0] == uid:
+                # increment skips' number of a current user
+                queues[title].queue[current][1] += 1
+                # pass turn to the next user
+                queues[title].current = (queues[title].current + 1) % len(queues[title].queue)
+                message_skip = '@' + alias + ', you have skipped your turn.'
+            else:
+                message_skip = '@' + alias + ', now it is not your turn.'
         else:
-            message_skip = '@' + alias + ', now it is not your turn.'
+            message_skip = 'Queue with specified title does not exist.'
     else:
-        message_skip = 'Queue with specified title does not exist.'
+        message_skip = 'Message does not match the required format. Check rules in /help.'
     return message_skip
 
 
