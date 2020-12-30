@@ -49,10 +49,10 @@ def leave(message):
                 # remove user pair from list
                 queues[title].queue.pop(index)
     message_remove_user = '@' + alias + ', your account was successfully removed.'
-    print(users, alias_dict, uid_dict, sep='\n')
     return message_remove_user
 
 
+# TODO: validator of message
 def create_queue(message):
     """
     Create new queue.
@@ -74,6 +74,7 @@ def create_queue(message):
 
 
 # TODO: check uids
+# TODO: validator of message
 def join_queue(message):
     """
     Join to the queue.
@@ -104,6 +105,7 @@ def join_queue(message):
     return message_join_queue
 
 
+# TODO: validator of message
 def quit_queue(message):
     """
     Quit from the queue.
@@ -134,7 +136,7 @@ def quit_queue(message):
     return message_quit_queue
 
 
-# TODO: check title
+# TODO: validator of message
 def remove_queue(message):
     """
     Remove queue with a given title.
@@ -190,7 +192,7 @@ def my_queues(message):
     return message_my_queues
 
 
-# TODO: check title
+# TODO: validator of message
 def current_user(message):
     """
     Get current user in a queue.
@@ -213,7 +215,7 @@ def current_user(message):
     return message_current_user
 
 
-# TODO: check title
+# TODO: validator of message
 def next_user(message):
     """
     Pass turn to the next user.
@@ -249,7 +251,7 @@ def next_user(message):
     return message_next_user
 
 
-# TODO: check title
+# TODO: validator of message
 def skip(message):
     """
     Skip the turn for a current user in a queue.

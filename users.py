@@ -35,6 +35,8 @@ users = {}
 alias_dict = {}
 # dictionary to map uid to alias
 uid_dict = {}
+# pending requests
+requests = {}
 
 
 def register(message):
@@ -51,19 +53,54 @@ def register(message):
     surname = message['from']['last_name']
 
     # check whether user is already in the list of users
-    if uid not in users.keys():
+    if uid in users.keys():
+        message_add_user = '@' + alias + ', you are already in the list of users.'
+    elif uid in requests.keys():
+        message_add_user = '@' + alias + ', your request has not been processed yet.'
+    else:
         # create new user
-        users[uid] = User(uid=uid, alias=alias, name=name, surname=surname)
+        requests[uid] = User(uid=uid, alias=alias, name=name, surname=surname)
         # TODO: remove
         alias_dict[uid] = alias
         uid_dict[alias] = uid
         # inform that the user was registered
-        message_add_user = '@' + alias + ', you were successfully added to the list of users.\n\n' + users[
+        message_add_user = '@' + alias + ", your request was successfully sent.\n\n" + requests[
             uid].__str__()
-    else:
-        message_add_user = '@' + alias + ', you are already in the list of users.'
-    print(users, uid_dict, alias_dict)
     return message_add_user
+
+
+def all_requests(message):
+    message_all_requests = '<b>Current requests</b>\n'
+    for requests_uid, requests_detail in requests.items():
+        message_all_requests += '• @' + requests_detail.alias + '\n'
+    return message_all_requests
+
+
+# TODO: validator of message
+def accept(message):
+    alias = message['from']['username']
+    aliases = message['text'].replace('@', '').split(' ')[1:]
+    message_accept = '@' + alias + ', you have added new user(s)\n'
+    for alias in aliases:
+        users[uid_dict[alias]] = requests[uid_dict[alias]]
+        requests.pop(uid_dict[alias])
+        message_accept += '• @' + alias + '.\n'
+    return message_accept
+
+
+# TODO: validator of message
+def decline(message):
+    alias = message['from']['username']
+    aliases = message['text'].replace('@', '').split(' ')[1:]
+
+    message_decline = '@' + alias + ', you have declined request(s) of \n'
+    for alias in aliases:
+        uid_remove = uid_dict[alias]
+        uid_dict.pop(alias)
+        alias_dict.pop(uid_remove)
+        requests.pop(uid_remove)
+        message_decline += '• @' + alias + '.\n'
+    return message_decline
 
 
 def me(message):
@@ -100,8 +137,6 @@ def update_me(message):
     uid_temp = uid_dict[previous_alias]
     uid_dict.pop(previous_alias)
     uid_dict[alias] = uid_temp
-
     # display message
-    print(users, alias_dict, uid_dict, sep='\n')
     message_change_name = '@' + alias + ', your account was successfully updated.\n\n' + users[uid].__str__()
     return message_change_name

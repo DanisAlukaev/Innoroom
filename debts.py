@@ -6,7 +6,7 @@ debts = {}
 
 # TODO: include in share only aliases that are registered -> _change_debts_dictionary
 # TODO: concatenate all responses from _change_debts_dictionary
-# TODO: validator
+# TODO: validator of message
 def give(message):
     """
     Give debt for specified users.
@@ -111,6 +111,7 @@ def get_my_services(message):
 
 
 # TODO: number of verified people
+# TODO: validator of message
 def share(message):
     """
     Share money for all users.
