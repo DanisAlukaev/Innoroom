@@ -1,4 +1,5 @@
 from users import users, alias_dict, uid_dict
+import re
 
 # users' debts
 debts = {}
@@ -17,7 +18,6 @@ def me(message):
     message_me += '\nTotal debt: ' + str(total_debts) + '.\n'
     # total services
     total_services = 0
-    message_details = 'Your service for the\n'
     # find user in a list of creditors
     for debt_key_1, debt_value_1 in debts.items():
         for debt_key_2, debt_value_2 in debt_value_1.items():
@@ -27,10 +27,13 @@ def me(message):
     return message_me
 
 
-# TODO: include in share only aliases that are registered -> _change_debts_dictionary
-# TODO: concatenate all responses from _change_debts_dictionary
-# TODO: validator of message
-# TODO: replace @
+def _get_list_user_aliases():
+    aliases = []
+    for uid_user, detail_user in users.items():
+        aliases.append(detail_user.alias)
+    return aliases
+
+
 def give(message):
     """
     Give debt for specified users.
@@ -42,22 +45,35 @@ def give(message):
     uid = message['from']['id']
     alias = message['from']['username']
 
-    money = int(message['text'].split(' ')[1])
-    aliases = message['text'].replace('@', '').split(' ')[2:]
+    if re.fullmatch(r'/give [1-9]+[0-9]*( @\w+)+', message['text']):
+        money = int(message['text'].split(' ')[1])
+        aliases = message['text'].replace('@', '').split(' ')[2:]
 
-    share_give = money / len(aliases)
-    aliases_str = ''
+        # didn't pass verification
+        fail_verification = []
+        fail_verification_str = ''
+        list_user_aliases = _get_list_user_aliases()
+        for alias_ in aliases:
+            if alias_ not in list_user_aliases:
+                fail_verification.append(alias_)
+                fail_verification_str += '@' + alias_ + ' '
 
-    for alias_ in aliases:
-        aliases_str += alias_ + ' '
-        # update debt list
-        _change_debts_dictionary(uid=uid, alias=alias_, money=share_give)
-    message_give = alias + ', you have given ' + str(money) + ' to ' + aliases_str
+        if len(fail_verification) == 0:
+            share_give = money / len(aliases)
+            aliases_str = ''
 
+            for alias_ in aliases:
+                aliases_str += alias_ + ' '
+                # update debt list
+                _change_debts_dictionary(uid=uid, alias=alias_, money=share_give)
+            message_give = alias + ', you have given ' + str(share_give) + ' to ' + aliases_str
+        else:
+            message_give = 'User with alias(es) ' + fail_verification_str + 'do(es) not registered in bot.'
+    else:
+        message_give = 'Message does not match the required format. Check rules in /help.'
     return message_give
 
 
-# TODO: awake after all method's calls
 def _change_debts_dictionary(uid, alias, money):
     """
     Update debts dictionary.
@@ -67,6 +83,7 @@ def _change_debts_dictionary(uid, alias, money):
     :param money: credit.
     :return reply
     """
+
     # check whether user with a given alias does exist
     if alias in uid_dict.keys():
         # check whether debt of a creditor is 0
@@ -80,10 +97,6 @@ def _change_debts_dictionary(uid, alias, money):
         elif debts[uid][uid_dict[alias]] > money:
             debts[uid][uid_dict[alias]] -= money
             debts[uid_dict[alias]][uid] = 0
-        message_change_debts = 'You have gave ' + str(money) + ' to @' + alias + '.\n'
-    else:
-        message_change_debts = 'There is no user with alias @' + alias
-    return message_change_debts
 
 
 def get_my_debts(message):
@@ -135,8 +148,6 @@ def get_my_services(message):
     return message_total
 
 
-# TODO: number of verified people
-# TODO: validator of message
 def share(message):
     """
     Share money for all users.
@@ -147,21 +158,25 @@ def share(message):
 
     # get information about the user
     uid = message['from']['id']
-    money = int(message['text'].split(' ')[1])
 
-    # number of users
-    number_users = len(users)
-    # share for each user
-    share_money = money / (number_users - 1)
+    if re.fullmatch(r'/share [1-9]+[0-9]*', message['text']):
+        money = int(message['text'].split(' ')[1])
+        # number of users
+        number_users = len(users)
+        # share for each user
+        share_money = money / (number_users - 1)
 
-    # update debts dictionary for all users
-    for user_uid, user_details in users.items():
-        if user_uid != uid:
-            alias = user_details.alias
-            _change_debts_dictionary(uid=uid, alias=alias, money=share_money)
+        # update debts dictionary for all users
+        for user_uid, user_details in users.items():
+            if user_uid != uid:
+                alias = user_details.alias
+                _change_debts_dictionary(uid=uid, alias=alias, money=share_money)
+        message_share = '@' + alias_dict[uid] + str(money) + ' was shared among all users of the bot.'
+    else:
+        message_share = 'Message does not match the required format. Check rules in /help.'
+    return message_share
 
 
-# TODO: after each method call
 def update_user_dictionary():
     """
     Update users' debts dictionary.

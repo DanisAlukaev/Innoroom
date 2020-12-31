@@ -78,6 +78,7 @@ def all_requests(message):
     return message_all_requests
 
 
+# TODO: alias is in users
 def accept(message):
     alias = message['from']['username']
 
