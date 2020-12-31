@@ -15,7 +15,7 @@ def me(message):
         if value != 0:
             # increase value of a total debt
             total_debts += value
-    message_me += '\nTotal debt: ' + str(total_debts) + '.\n'
+    message_me += '\n\n<b>Finances</b>\nTotal debt: ' + str(total_debts) + '.\n'
     # total services
     total_services = 0
     # find user in a list of creditors
@@ -25,13 +25,6 @@ def me(message):
                 total_services += debt_value_2
     message_me += 'Total service: ' + str(total_services) + '.'
     return message_me
-
-
-def _get_list_user_aliases():
-    aliases = []
-    for uid_user, detail_user in users.items():
-        aliases.append(detail_user.alias)
-    return aliases
 
 
 def give(message):
@@ -52,7 +45,7 @@ def give(message):
         # didn't pass verification
         fail_verification = []
         fail_verification_str = ''
-        list_user_aliases = _get_list_user_aliases()
+        list_user_aliases = users.get_list_user_aliases()
         for alias_ in aliases:
             if alias_ not in list_user_aliases:
                 fail_verification.append(alias_)

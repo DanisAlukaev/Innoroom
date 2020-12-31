@@ -51,9 +51,14 @@ def register(message):
     """
     # get information about the user
     uid = message['from']['id']
-    alias = message['from']['username']
     name = message['from']['first_name']
     surname = message['from']['last_name']
+
+    if not message['from']['username']:
+        message_add_user = name + ' ' + surname + ', you should have username in Telegram.'
+        return message_add_user
+
+    alias = message['from']['username']
 
     # check whether user is already in the list of users
     if uid in users.keys():
@@ -78,17 +83,41 @@ def all_requests(message):
     return message_all_requests
 
 
-# TODO: alias is in users
+def get_list_request_aliases():
+    aliases = []
+    for uid_user, detail_user in requests.items():
+        aliases.append(detail_user.alias)
+    return aliases
+
+
+def _check_presence_users(message):
+    aliases = message['text'].replace('@', '').split(' ')[1:]
+    # didn't pass verification
+    fail_verification = []
+    fail_verification_str = ''
+    list_request_aliases = get_list_request_aliases()
+    for alias_ in aliases:
+        if alias_ not in list_request_aliases:
+            fail_verification.append(alias_)
+            fail_verification_str += '@' + alias_ + ' '
+    return aliases, fail_verification, fail_verification_str
+
+
 def accept(message):
     alias = message['from']['username']
 
-    if re.fullmatch(r'/accept( @\w+)+', message['text']):
-        aliases = message['text'].replace('@', '').split(' ')[1:]
-        message_accept = '@' + alias + ', you have added new user(s)\n'
-        for alias in aliases:
-            users[uid_dict[alias]] = requests[uid_dict[alias]]
-            requests.pop(uid_dict[alias])
-            message_accept += '• @' + alias + '.\n'
+    if re.fullmatch(r'/accept( @\w+)+', message['text'].replace('\n', '')):
+        aliases, fail_verification, fail_verification_str = _check_presence_users(message)
+
+        if len(fail_verification) == 0:
+            message_accept = '@' + alias + ', you have added new user(s)\n'
+            for alias in aliases:
+                users[uid_dict[alias]] = requests[uid_dict[alias]]
+                requests.pop(uid_dict[alias])
+                message_accept += '• @' + alias + '\n'
+        else:
+            message_accept = 'User with alias(es) ' + fail_verification_str + "didn't send joining request in bot."
+
     else:
         message_accept = 'Message does not match the required format. Check rules in /help.'
     return message_accept
@@ -97,15 +126,19 @@ def accept(message):
 def decline(message):
     alias = message['from']['username']
 
-    if re.fullmatch(r'/decline( @\w+)+', message['text']):
-        aliases = message['text'].replace('@', '').split(' ')[1:]
-        message_decline = '@' + alias + ', you have declined request(s) of \n'
-        for alias in aliases:
-            uid_remove = uid_dict[alias]
-            uid_dict.pop(alias)
-            alias_dict.pop(uid_remove)
-            requests.pop(uid_remove)
-            message_decline += '• @' + alias + '.\n'
+    if re.fullmatch(r'/decline( @\w+)+', message['text'].replace('\n', '')):
+        aliases, fail_verification, fail_verification_str = _check_presence_users(message)
+
+        if len(fail_verification) == 0:
+            message_decline = '@' + alias + ', you have declined request(s) of \n'
+            for alias in aliases:
+                uid_remove = uid_dict[alias]
+                uid_dict.pop(alias)
+                alias_dict.pop(uid_remove)
+                requests.pop(uid_remove)
+                message_decline += '• @' + alias + '\n'
+        else:
+            message_decline = 'User with alias(es) ' + fail_verification_str + 'did not send joining request in bot.'
     else:
         message_decline = 'Message does not match the required format. Check rules in /help.'
     return message_decline
