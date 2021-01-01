@@ -28,15 +28,15 @@ async def help_message(message):
     await message.answer(
         "Telegram-bot for the daily routine of our room in the dormitories of Innopolis.\n\n"
         "You can control me by sending these commands:\n\n"
-        "<b>Manage</b> (only for administrators)\n"
-        "/accept <b>username</b> [...] - accept request(s) of user(s)\n"
-        "/all_requests - get all pending requests\n"
-        "/remove <b>username</b> [...] - remove user(s)\n"
-        "/decline <b>username</b> [...] - decline request(s) of user(s)\n\n"
+        "<b>Manage bot</b> (only for administrators)\n"
+        "/accept <b>username</b> [...] - accept request(s) to join\n"
+        "/decline <b>username</b> [...] - decline request(s) to join\n"
+        "/all_requests - get all pending requests to join\n"
+        "/remove <b>username</b> [...] - remove user(s)\n\n"
         "<b>Profile control</b>\n"
-        "/register - register in the chat bot\n"
-        "/me - get information about me\n"
-        "/update_me - update an account\n"
+        "/request_join - send request to join\n"
+        "/me - get user information\n"
+        "/update_me - automatically update your name, surname, username\n"
         "/leave - leave bot\n\n"
         "<b>Queues</b>\n"
         "/create_queue <b>title</b> - сreate new queue\n"
@@ -44,16 +44,16 @@ async def help_message(message):
         "/join_queue <b>title</b> - join the queue\n"
         "/quit_queue <b>title</b> - quit the queue\n"
         "/get_queues - get existing queues\n"
-        "/my_queues - get my queues\n"
+        "/my_queues - get your queues\n"
         "/current_user <b>title</b> - get a user whose turn is it now\n"
         "/next_user <b>title</b> - pass turn to next user\n"
         "/skip <b>title</b> - skip your turn\n"
         "/get_states - get states of all queues\n\n"
         "<b>Debts</b>\n"
-        "/give <b>money</b> <b>username</b> [...] - give money to user(s) with specified alias(es)\n"
+        "/give <b>money</b> <b>username</b> [...] - give money to specified user(s)\n"
         "/my_debts - get your debts\n"
         "/my_services - get your services\n"
-        "/share <b>money</b> - share debt between all users\n"
+        "/share <b>money</b> - share money between all users\n"
     )
 
 
@@ -71,6 +71,7 @@ def authorization(func):
     return wrapper
 
 
+# Manage bot
 @dp.message_handler(commands=['accept'])
 async def accept(message):
     if message['from']['id'] not in admin_uid:
@@ -91,16 +92,6 @@ async def decline(message):
     await message.answer(reply)
 
 
-@dp.message_handler(commands=['remove'])
-async def remove(message):
-    if message['from']['id'] not in admin_uid:
-        reply = 'Allowed only for administrators.'
-    else:
-        reply = queues.remove_user(message)
-    debts.update_user_dictionary()
-    await message.answer(reply)
-
-
 @dp.message_handler(commands=['all_requests'])
 async def all_requests(message):
     if message['from']['id'] not in admin_uid:
@@ -111,9 +102,20 @@ async def all_requests(message):
     await message.answer(reply)
 
 
-@dp.message_handler(commands=['register'])
-async def register(message):
-    reply = users.register(message)
+@dp.message_handler(commands=['remove'])
+async def remove(message):
+    if message['from']['id'] not in admin_uid:
+        reply = 'Allowed only for administrators.'
+    else:
+        reply = queues.remove_user(message)
+    debts.update_user_dictionary()
+    await message.answer(reply)
+
+
+# Profile control
+@dp.message_handler(commands=['request_join'])
+async def request_join(message):
+    reply = users.request_join(message)
     debts.update_user_dictionary()
     await message.answer(reply)
 
@@ -142,10 +144,19 @@ async def leave(message):
     await message.answer(reply)
 
 
+# Queues
 @dp.message_handler(commands=['create_queue'])
 @authorization
 async def create_queue(message):
     reply = queues.create_queue(message)
+    debts.update_user_dictionary()
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['remove_queue'])
+@authorization
+async def remove_queue(message):
+    reply = queues.remove_queue(message)
     debts.update_user_dictionary()
     await message.answer(reply)
 
@@ -162,14 +173,6 @@ async def join_queue(message):
 @authorization
 async def quit_queue(message):
     reply = queues.quit_queue(message)
-    debts.update_user_dictionary()
-    await message.answer(reply)
-
-
-@dp.message_handler(commands=['remove_queue'])
-@authorization
-async def remove_queue(message):
-    reply = queues.remove_queue(message)
     debts.update_user_dictionary()
     await message.answer(reply)
 
@@ -222,6 +225,7 @@ async def get_states(message):
     await message.answer(reply)
 
 
+# Debts
 @dp.message_handler(commands=['give'])
 @authorization
 async def give(message):
@@ -255,5 +259,4 @@ async def share(message):
 
 
 if __name__ == "__main__":
-    # run the bot
     executor.start_polling(dp, skip_updates=True)
