@@ -46,3 +46,26 @@ async def check_presence_requests(message):
             fail_validation.append(alias_)
             fail_validation_str += '@' + alias_ + ' '
     return aliases, fail_validation, fail_validation_str
+
+
+async def check_presence_users(message):
+    """
+    Return parsed aliases and aliases that were failed to validate.
+
+    :param message: user's message.
+    :return: reply.
+    """
+    # get list of aliases from message
+    aliases = message['text'].replace('@', '').split(' ')[1:]
+    # list and string of aliases that didn't pass verification
+    fail_verification = []
+    fail_verification_str = ''
+    # get list of user aliases
+    users = await queries.get_users()
+    list_user_aliases = [user['alias'] for user in users]
+    for alias_ in aliases:
+        # check whether alias belongs to the user of bot
+        if alias_ not in list_user_aliases:
+            fail_verification.append(alias_)
+            fail_verification_str += '@' + alias_ + ' '
+    return aliases, fail_verification, fail_verification_str

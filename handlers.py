@@ -8,7 +8,8 @@ from asyncpg.exceptions import UniqueViolationError
 from misc import bot, dp
 from config import administrators
 
-from modules.users import auxiliary, requests
+from modules.users import auxiliary, requests, profile
+from modules.queues import manage_queues
 
 
 @dp.message_handler(commands=['start'])
@@ -60,18 +61,33 @@ def authorization(func):
 
     async def wrapper(message):
         if message['from']['id'] not in (await auxiliary.get_user_ids()):
-            return await message.reply('Access Denied.')
+            return await message.reply('You are not the user of the bot.')
         return await func(message)
 
     return wrapper
 
 
+# Profile
 @dp.message_handler(commands=['join_bot'])
 async def join_bot(message):
-    reply = await requests.join_bot(message)
+    reply = await profile.join_bot(message)
     await message.answer(reply)
 
 
+@dp.message_handler(commands=['update_me'])
+async def update_me(message):
+    reply = await profile.update_me(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['leave'])
+@authorization
+async def leave(message):
+    reply = await profile.leave(message)
+    await message.answer(reply)
+
+
+# Requests
 @dp.message_handler(commands=['accept'])
 async def accept(message):
     if message['from']['id'] not in administrators:
@@ -99,7 +115,46 @@ async def all_requests(message):
     await message.answer(reply)
 
 
-@dp.message_handler(commands=['update_me'])
-async def update_me(message):
-    reply = await requests.update_me(message)
+@dp.message_handler(commands=['remove'])
+async def remove(message):
+    if message['from']['id'] not in administrators:
+        reply = 'Allowed only for administrators.'
+    else:
+        reply = await requests.remove_user(message)
     await message.answer(reply)
+
+
+# Manage
+@dp.message_handler(commands=['create_queue'])
+@authorization
+async def create_queue(message):
+    reply = await manage_queues.create_queue(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['join_queue'])
+@authorization
+async def join_queue(message):
+    reply = await manage_queues.join_queue(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['remove_queue'])
+@authorization
+async def remove_queue(message):
+    reply = await manage_queues.remove_queue(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['get_queues'])
+@authorization
+async def get_queues(message):
+    reply = await manage_queues.get_queues(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['my_queues'])
+@authorization
+async def my_queues(message):
+    reply = await manage_queues.my_queues(message)
+    return await message.reply(reply)
