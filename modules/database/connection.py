@@ -23,7 +23,8 @@ async def create_db():
 async def create_pool():
     return await asyncpg.create_pool(user=PG_USER,
                                      password=PG_PASS,
-                                     host=host)
+                                     host=host,
+                                     max_inactive_connection_lifetime=3)
 
 
 if __name__ == '__main__':
