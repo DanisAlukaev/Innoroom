@@ -12,19 +12,14 @@ async def create_db():
     create_db_command = open("./modules/database/database.sql", "r").read()
 
     logging.info("Connecting to database...")
-    conn: asyncpg.Connection = await asyncpg.connect(user=PG_USER,
-                                                     password=PG_PASS,
-                                                     host=host)
+    conn: asyncpg.Connection = await asyncpg.connect(user=PG_USER, password=PG_PASS, host=host, )
     await conn.execute(create_db_command)
     await conn.close()
     logging.info("Tables users, queues, members, debts were created.")
 
 
 async def create_pool():
-    return await asyncpg.create_pool(user=PG_USER,
-                                     password=PG_PASS,
-                                     host=host,
-                                     max_inactive_connection_lifetime=3)
+    return await asyncpg.create_pool(user=PG_USER, password=PG_PASS, host=host, )
 
 
 if __name__ == '__main__':

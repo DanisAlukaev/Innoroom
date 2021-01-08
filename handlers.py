@@ -1,15 +1,9 @@
-import random
-
-import logging
-from aiogram import types
-from asyncpg import Record
-from asyncpg.exceptions import UniqueViolationError
-
-from misc import bot, dp
+from misc import dp
 from config import administrators
 
-from modules.users import auxiliary, join_requests, profile, interaction_with_bot
-from modules.queues import manage_queues
+from modules.users import auxiliary, requests, profile, interact
+from modules.queues import manage, information as information_queues
+from modules.finances import exchange, information as information_finances
 
 
 @dp.message_handler(commands=['start'])
@@ -67,34 +61,44 @@ def authorization(func):
     return wrapper
 
 
-# Profile
+# users.profile
+
 @dp.message_handler(commands=['update_me'])
 async def update_me(message):
     reply = await profile.update_me(message)
     await message.answer(reply)
 
 
-# Interaction with bot
+@dp.message_handler(commands=['me'])
+@authorization
+async def me(message):
+    reply = await profile.me(message)
+    await message.answer(reply)
+
+
+# users.interaction_with_bot
+
 @dp.message_handler(commands=['join_bot'])
 async def join_bot(message):
-    reply = await interaction_with_bot.join_bot(message)
+    reply = await interact.join_bot(message)
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['leave'])
 @authorization
 async def leave(message):
-    reply = await interaction_with_bot.leave(message)
+    reply = await interact.leave(message)
     await message.answer(reply)
 
 
-# Requests
+# users.join_requests
+
 @dp.message_handler(commands=['accept'])
 async def accept(message):
     if message['from']['id'] not in administrators:
         reply = 'Allowed only for administrators.'
     else:
-        reply = await join_requests.accept(message)
+        reply = await requests.accept(message)
     await message.answer(reply)
 
 
@@ -103,7 +107,7 @@ async def decline(message):
     if message['from']['id'] not in administrators:
         reply = 'Allowed only for administrators.'
     else:
-        reply = await join_requests.decline(message)
+        reply = await requests.decline(message)
     await message.answer(reply)
 
 
@@ -112,7 +116,7 @@ async def all_requests(message):
     if message['from']['id'] not in administrators:
         reply = 'Allowed only for administrators.'
     else:
-        reply = await join_requests.all_requests(message)
+        reply = await requests.all_requests(message)
     await message.answer(reply)
 
 
@@ -121,76 +125,111 @@ async def remove(message):
     if message['from']['id'] not in administrators:
         reply = 'Allowed only for administrators.'
     else:
-        reply = await join_requests.remove_user(message)
+        reply = await requests.remove_user(message)
     await message.answer(reply)
 
 
-# Manage
+# queues.manage_queues
+
 @dp.message_handler(commands=['create_queue'])
 @authorization
 async def create_queue(message):
-    reply = await manage_queues.create_queue(message)
+    reply = await manage.create_queue(message)
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['join_queue'])
 @authorization
 async def join_queue(message):
-    reply = await manage_queues.join_queue(message)
+    reply = await manage.join_queue(message)
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['remove_queue'])
 @authorization
 async def remove_queue(message):
-    reply = await manage_queues.remove_queue(message)
-    await message.answer(reply)
-
-
-@dp.message_handler(commands=['get_queues'])
-@authorization
-async def get_queues(message):
-    reply = await manage_queues.get_queues(message)
-    await message.answer(reply)
-
-
-@dp.message_handler(commands=['my_queues'])
-@authorization
-async def my_queues(message):
-    reply = await manage_queues.my_queues(message)
-    return await message.reply(reply)
-
-
-@dp.message_handler(commands=['get_states'])
-@authorization
-async def get_states(message):
-    reply = await manage_queues.get_states(message)
-    await message.answer(reply)
-
-
-@dp.message_handler(commands=['current_user'])
-@authorization
-async def current_user(message):
-    reply = await manage_queues.current_user(message)
+    reply = await manage.remove_queue(message)
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['next_user'])
 @authorization
 async def next_user(message):
-    reply = await manage_queues.next_user(message)
+    reply = await manage.next_user(message)
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['skip'])
 @authorization
 async def skip(message):
-    reply = await manage_queues.skip(message)
+    reply = await manage.skip(message)
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['quit_queue'])
 @authorization
 async def quit_queue(message):
-    reply = await manage_queues.quit_queue(message)
+    reply = await manage.quit_queue(message)
+    await message.answer(reply)
+
+
+# queues.information
+
+@dp.message_handler(commands=['get_queues'])
+@authorization
+async def get_queues(message):
+    reply = await information_queues.get_queues(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['my_queues'])
+@authorization
+async def my_queues(message):
+    reply = await information_queues.my_queues(message)
+    return await message.reply(reply)
+
+
+@dp.message_handler(commands=['get_states'])
+@authorization
+async def get_states(message):
+    reply = await information_queues.get_states(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['current_user'])
+@authorization
+async def current_user(message):
+    reply = await information_queues.current_user(message)
+    await message.answer(reply)
+
+
+# finances.exchange
+
+@dp.message_handler(commands=['give'])
+@authorization
+async def give(message):
+    reply = await exchange.give(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['share'])
+@authorization
+async def share(message):
+    reply = await exchange.share(message)
+    await message.answer(reply)
+
+
+# finances.information
+
+@dp.message_handler(commands=['my_debts'])
+@authorization
+async def get_my_debts(message):
+    reply = await information_finances.get_my_debts(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['my_services'])
+@authorization
+async def get_my_services(message):
+    reply = await information_finances.get_my_services(message)
     await message.answer(reply)

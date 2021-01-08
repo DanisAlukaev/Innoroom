@@ -1,6 +1,5 @@
 from misc import queries
 from modules.users import auxiliary
-import re
 
 
 async def join_bot(message):
@@ -25,19 +24,16 @@ async def join_bot(message):
 
     if uid in (await auxiliary.get_user_ids()):
         # sender is already in the list of users
-        message_add_user = '@' + alias + ', you are already in the list of users.'
+        message_add_user = name + ', you are already in the list of users.'
     elif uid in (await auxiliary.get_request_ids()):
         # sender has already sent request
-        message_add_user = '@' + alias + ', your request has not been processed yet.'
+        message_add_user = name + ', your request has not been processed yet.'
     else:
         # create new request
-        success = await queries.add_request(uid, alias, name, surname)
-        if success:
-            # new request was created
-            profile = await auxiliary.user_data_to_string(uid)
-            message_add_user = '@' + alias + ", your request was successfully sent.\n\n" + profile
-        else:
-            message_add_user = 'Something went wrong...'
+        await queries.add_request(uid, alias, name, surname)
+        # new request was created
+        profile = await auxiliary.user_data_to_string(uid)
+        message_add_user = name + ", your request was successfully sent.\n\n" + profile
     return message_add_user
 
 

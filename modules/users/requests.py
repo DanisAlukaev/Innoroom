@@ -1,7 +1,6 @@
 from misc import queries
 from modules.users import auxiliary
 import re
-import logging
 
 
 async def all_requests(message):
@@ -32,18 +31,20 @@ async def accept(message):
     :param message: user's message.
     :return: reply.
     """
-    # get alias of user
-    alias = message['from']['username']
+    # get name of user
+    name = message['from']['first_name']
 
     if re.fullmatch(r'/accept( @\w+)+', message['text'].replace('\n', '')):
         # message is properly formatted
 
         # get parsed aliases and aliases that were failed to validate
-        aliases, fail_validation, fail_validation_str = await auxiliary.check_presence_requests(message)
+        aliases = message['text'].replace('@', '').split(' ')[1:]
+        aliases, fail_validation, fail_validation_str = await auxiliary.check_presence_requests(aliases)
 
         if len(fail_validation) == 0:
             # all aliases are in requests list
-            message_accept = '@' + alias + ', you have added new user(s)\n'
+
+            message_accept = name + ', you have added new user(s)\n'
             for alias in aliases:
                 # accept request
                 await queries.accept_request(alias)
@@ -64,18 +65,20 @@ async def decline(message):
     :param message: user's message.
     :return: reply.
     """
-    # get alias of user
-    alias = message['from']['username']
+    # get name of user
+    name = message['from']['first_name']
 
     if re.fullmatch(r'/decline( @\w+)+', message['text'].replace('\n', '')):
         # message is properly formatted
 
         # get parsed aliases and aliases that were failed to validate
-        aliases, fail_validation, fail_validation_str = await auxiliary.check_presence_requests(message)
+        aliases = message['text'].replace('@', '').split(' ')[1:]
+        aliases, fail_validation, fail_validation_str = await auxiliary.check_presence_requests(aliases)
 
         if len(fail_validation) == 0:
             # all aliases are in requests list
-            message_decline = '@' + alias + ', you have declined request(s) of \n'
+
+            message_decline = name + ', you have declined request(s) of \n'
             for alias in aliases:
                 # remove request
                 await queries.remove_user_by_alias(alias)
@@ -96,22 +99,23 @@ async def remove_user(message):
     :param message: user's message.
     :return: reply.
     """
-    # get alias of user
-    alias = message['from']['username']
+    # get name of user
+    name = message['from']['first_name']
 
     if re.fullmatch(r'/remove( @\w+)+', message['text'].replace('\n', '')):
         # message is properly formatted
 
         # get parsed aliases and aliases that were failed to validate
-        aliases, fail_verification, fail_verification_str = await auxiliary.check_presence_users(message)
+        aliases = message['text'].replace('@', '').split(' ')[1:]
+        aliases, fail_verification, fail_verification_str = await auxiliary.check_presence_users(aliases)
 
         if len(fail_verification) == 0:
             # all aliases are in users list
-            message_remove_user = '@' + alias + ', you have removed user(s)\n'
+
+            message_remove_user = name + ', you have removed user(s)\n'
             for alias_ in aliases:
                 # remove from the list of users
                 await queries.remove_user_by_alias(alias_)
-
                 # remove user from all queues
                 # TODO: remove from all queues
                 message_remove_user += '• @' + alias_ + '\n'
