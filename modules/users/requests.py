@@ -47,6 +47,14 @@ async def accept(message):
             message_accept = name + ', you have added new user(s)\n'
             for alias in aliases:
                 # accept request
+
+                id_new_user = await queries.get_user_by_alias(alias)['id']
+                users = await queries.get_users()
+                for user in users:
+                    id_old_user = user['id']
+                    await queries.create_zero_debt(id_new_user, id_old_user)
+                    await queries.create_zero_debt(id_old_user, id_new_user)
+
                 await queries.accept_request(alias)
                 message_accept += '• @' + alias + '\n'
         else:
@@ -116,8 +124,6 @@ async def remove_user(message):
             for alias_ in aliases:
                 # remove from the list of users
                 await queries.remove_user_by_alias(alias_)
-                # remove user from all queues
-                # TODO: remove from all queues
                 message_remove_user += '• @' + alias_ + '\n'
         else:
             # some aliases fail validation

@@ -158,6 +158,10 @@ class Queries:
 
     # table debts
 
+    async def create_zero_debt(self, debtor_id, creditor_id):
+        args = debtor_id, creditor_id
+        await self.pool.fetch(self.CREATE_ZERO_DEBT, *args)
+
     async def get_debts(self, uid):
         debts = await self.pool.fetch(self.GET_DEBTS, uid)
         return debts

@@ -6,7 +6,13 @@ from modules.queues import manage, information as information_queues
 from modules.finances import exchange, information as information_finances
 
 
+async def throttling(*args, **kwargs):
+    message = args[0]
+    await message.answer('Throttled.')
+
+
 @dp.message_handler(commands=['start'])
+@dp.throttled(throttling, rate=1)
 async def start_message(message):
     await message.answer(
         "Hello, use /help to see my functionalities.\n"
@@ -14,6 +20,7 @@ async def start_message(message):
 
 
 @dp.message_handler(commands=['help'])
+@dp.throttled(throttling, rate=1)
 async def help_message(message):
     await message.answer(
         "Telegram-bot for the daily routine of our room in the dormitories of Innopolis.\n\n"
@@ -64,12 +71,14 @@ def authorization(func):
 # users.profile
 
 @dp.message_handler(commands=['update_me'])
+@dp.throttled(throttling, rate=1)
 async def update_me(message):
     reply = await profile.update_me(message)
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['me'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def me(message):
     reply = await profile.me(message)
@@ -79,12 +88,14 @@ async def me(message):
 # users.interaction_with_bot
 
 @dp.message_handler(commands=['join_bot'])
+@dp.throttled(throttling, rate=1)
 async def join_bot(message):
     reply = await interact.join_bot(message)
     await message.answer(reply)
 
 
 @dp.message_handler(commands=['leave'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def leave(message):
     reply = await interact.leave(message)
@@ -94,6 +105,7 @@ async def leave(message):
 # users.join_requests
 
 @dp.message_handler(commands=['accept'])
+@dp.throttled(throttling, rate=1)
 async def accept(message):
     if message['from']['id'] not in administrators:
         reply = 'Allowed only for administrators.'
@@ -103,6 +115,7 @@ async def accept(message):
 
 
 @dp.message_handler(commands=['decline'])
+@dp.throttled(throttling, rate=1)
 async def decline(message):
     if message['from']['id'] not in administrators:
         reply = 'Allowed only for administrators.'
@@ -112,6 +125,7 @@ async def decline(message):
 
 
 @dp.message_handler(commands=['all_requests'])
+@dp.throttled(throttling, rate=1)
 async def all_requests(message):
     if message['from']['id'] not in administrators:
         reply = 'Allowed only for administrators.'
@@ -121,6 +135,7 @@ async def all_requests(message):
 
 
 @dp.message_handler(commands=['remove'])
+@dp.throttled(throttling, rate=1)
 async def remove(message):
     if message['from']['id'] not in administrators:
         reply = 'Allowed only for administrators.'
@@ -132,6 +147,7 @@ async def remove(message):
 # queues.manage_queues
 
 @dp.message_handler(commands=['create_queue'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def create_queue(message):
     reply = await manage.create_queue(message)
@@ -139,6 +155,7 @@ async def create_queue(message):
 
 
 @dp.message_handler(commands=['join_queue'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def join_queue(message):
     reply = await manage.join_queue(message)
@@ -146,6 +163,7 @@ async def join_queue(message):
 
 
 @dp.message_handler(commands=['remove_queue'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def remove_queue(message):
     reply = await manage.remove_queue(message)
@@ -153,6 +171,7 @@ async def remove_queue(message):
 
 
 @dp.message_handler(commands=['next_user'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def next_user(message):
     reply = await manage.next_user(message)
@@ -160,6 +179,7 @@ async def next_user(message):
 
 
 @dp.message_handler(commands=['skip'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def skip(message):
     reply = await manage.skip(message)
@@ -167,6 +187,7 @@ async def skip(message):
 
 
 @dp.message_handler(commands=['quit_queue'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def quit_queue(message):
     reply = await manage.quit_queue(message)
@@ -176,6 +197,7 @@ async def quit_queue(message):
 # queues.information
 
 @dp.message_handler(commands=['get_queues'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def get_queues(message):
     reply = await information_queues.get_queues(message)
@@ -183,6 +205,7 @@ async def get_queues(message):
 
 
 @dp.message_handler(commands=['my_queues'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def my_queues(message):
     reply = await information_queues.my_queues(message)
@@ -190,6 +213,7 @@ async def my_queues(message):
 
 
 @dp.message_handler(commands=['get_states'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def get_states(message):
     reply = await information_queues.get_states(message)
@@ -197,6 +221,7 @@ async def get_states(message):
 
 
 @dp.message_handler(commands=['current_user'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def current_user(message):
     reply = await information_queues.current_user(message)
@@ -206,6 +231,7 @@ async def current_user(message):
 # finances.exchange
 
 @dp.message_handler(commands=['give'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def give(message):
     reply = await exchange.give(message)
@@ -213,6 +239,7 @@ async def give(message):
 
 
 @dp.message_handler(commands=['share'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def share(message):
     reply = await exchange.share(message)
@@ -222,6 +249,7 @@ async def share(message):
 # finances.information
 
 @dp.message_handler(commands=['my_debts'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def get_my_debts(message):
     reply = await information_finances.get_my_debts(message)
@@ -229,6 +257,7 @@ async def get_my_debts(message):
 
 
 @dp.message_handler(commands=['my_services'])
+@dp.throttled(throttling, rate=1)
 @authorization
 async def get_my_services(message):
     reply = await information_finances.get_my_services(message)
