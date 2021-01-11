@@ -34,7 +34,6 @@ async def create_queue(message):
     return message_create_queue
 
 
-# TODO: current user modify
 async def join_queue(message):
     """
     Join to the queue.
@@ -67,12 +66,29 @@ async def join_queue(message):
             if title not in user_titles:
                 # user is out of queue
 
+                # get ordering before adding
+                sorted_user_prev = await auxiliary.get_users_in_queue_ordered(title)
+
                 # get id of queue in members table
                 queue_id = (await queries.get_queue_id_by_title(title))['id']
                 # get id of user in users in table
                 user_id = (await queries.get_user_by_uid(uid))['id']
                 # join queue
                 await queries.join_queue(user_id, queue_id)
+
+                # get index of a current user in a queue in list
+                current_index = await queries.get_current_user_index(title)
+                # get id of a current user
+                curr_user = sorted_user_prev[current_index]
+
+                # get added user
+                user = await queries.get_user_by_uid(uid)
+
+                # get ordering after adding
+                sorted_user_after = await auxiliary.get_users_in_queue_ordered(title)
+                if sorted_user_after.index(user) < sorted_user_after.index(curr_user):
+                    await queries.change_next_user(current_index + 1, title)
+
                 message_join_queue = '@' + alias + ', you are now in the queue <b>' + title + '</b>.'
             else:
                 # user is in queue

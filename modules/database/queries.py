@@ -141,7 +141,7 @@ class Queries:
         return users
 
     async def get_current_user_index(self, title):
-        index = (await self.pool.fetch(self.GET_CURRENT_USER_INDEX, title))[0]['curr_user']
+        index = int((await self.pool.fetch(self.GET_CURRENT_USER_INDEX, title))[0]['curr_user'])
         return index
 
     async def change_skips_for_user(self, skips, uid):
