@@ -46,7 +46,7 @@ async def my_queues(message):
         # there are no queues in built string
         message_my_queues = name + ', you did not join any queue in bot.'
     else:
-        message_my_queues = '<b>Your queues:</b>\n' + message_my_queues
+        message_my_queues = name + ', your queues are:\n' + message_my_queues
     return message_my_queues
 
 
@@ -81,7 +81,7 @@ async def get_states(message):
             # get index of current user
             current_user_index = queue['curr_user']
             # get number of skips
-            skips = (await queries.get_skips_for_user(user['uid']))[0]['skips']
+            skips = await queries.get_skips_for_user(user['uid'], queue['title'])
 
             if current_user_index == users_ordered.index(user):
                 # underline text for a current user

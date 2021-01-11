@@ -29,13 +29,13 @@ async def user_data_to_string(uid):
     :param uid: user id.
     :return: serialized profile.
     """
-    users_data = await queries.get_user_by_uid(uid)
-    if users_data[0]['request'] == 'pending':
+    user = await queries.get_user_by_uid(uid)
+    if user['request'] == 'pending':
         profile = '<b>Request profile:</b>\n'
     else:
         profile = '<b>Profile account:</b>\n'
-    profile += 'Alias: @' + users_data[0]['alias'] + '\n' + 'Name: ' + users_data[0][
-        'name'] + '\n' + 'Surname: ' + users_data[0]['surname']
+    profile += 'Alias: @' + user['alias'] + '\n' + 'Name: ' + user[
+        'name'] + '\n' + 'Surname: ' + user['surname']
     return profile
 
 

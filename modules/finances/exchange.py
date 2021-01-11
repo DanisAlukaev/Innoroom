@@ -11,18 +11,17 @@ async def _change_debts_dictionary(debtor_uid, creditor_uid, money):
     :param creditor_uid: user id of a debtor.
     :param money: credit.
     """
-    debt_of_creditor = int(await queries.get_debt(creditor_uid, debtor_uid))
+    debt_of_creditor = int((await queries.get_debt(creditor_uid, debtor_uid))['value'])
     # check whether debt of a creditor is 0
     if debt_of_creditor == 0:
         await queries.update_debt(money, debtor_uid, creditor_uid)
     # debt of a creditor is less than a given credit
     elif debt_of_creditor <= money:
-        current_debt_of_debtor = int(await queries.get_debt(debtor_uid, creditor_uid))
-        await queries.update_debt(money - current_debt_of_debtor, debtor_uid, creditor_uid)
+        await queries.update_debt(money - debt_of_creditor, debtor_uid, creditor_uid)
         await queries.update_debt(0, creditor_uid, debtor_uid)
     # debt of a creditor is greater than a given credit
     elif debt_of_creditor > money:
-        current_debt_of_creditor = int(await queries.get_debt(creditor_uid, debtor_uid))
+        current_debt_of_creditor = int((await queries.get_debt(creditor_uid, debtor_uid))['value'])
         await queries.update_debt(current_debt_of_creditor - money, creditor_uid, debtor_uid)
         await queries.update_debt(0, debtor_uid, creditor_uid)
 
@@ -49,6 +48,9 @@ async def give(message):
         # get parsed aliases and aliases that were failed to validate
         aliases, fail_verification, fail_verification_str = await auxiliary.check_presence_users(aliases_raw)
 
+        if message['from']['username'] in aliases:
+            return 'You cannot lend money to yourself!'
+
         if len(fail_verification) == 0:
             # all aliases are in users list
 
@@ -59,7 +61,7 @@ async def give(message):
             for alias_ in aliases:
                 aliases_str += '@' + alias_ + ' '
                 # get user id of debtor
-                debtor_uid = await queries.get_user_by_alias(alias_)
+                debtor_uid = (await queries.get_user_by_alias(alias_))['uid']
                 # update table debts
                 await _change_debts_dictionary(debtor_uid, uid, share_give)
             message_give = name + ', you have given ' + str(share_give) + ' to ' + aliases_str

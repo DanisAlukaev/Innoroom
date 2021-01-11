@@ -7,8 +7,8 @@ from modules.finances import exchange, information as information_finances
 
 
 async def throttling(*args, **kwargs):
-    message = args[0]
-    await message.answer('Throttled.')
+    # do nothing
+    pass
 
 
 @dp.message_handler(commands=['start'])
@@ -29,7 +29,8 @@ async def help_message(message):
         "/accept <b>username</b> [...] - accept request(s) to join\n"
         "/decline <b>username</b> [...] - decline request(s) to join\n"
         "/all_requests - get all pending requests to join\n"
-        "/remove <b>username</b> [...] - remove user(s)\n\n"
+        "/remove <b>username</b> [...] - remove user(s)\n"
+        "/remove_from_queue <b>username</b> <b>title</b> = remove user from specified queue\n\n"
         "<b>Profile control</b>\n"
         "/join_bot - send request to join\n"
         "/me - get user information\n"
@@ -85,7 +86,7 @@ async def me(message):
     await message.answer(reply)
 
 
-# users.interaction_with_bot
+# users.interact
 
 @dp.message_handler(commands=['join_bot'])
 @dp.throttled(throttling, rate=1)
@@ -102,7 +103,7 @@ async def leave(message):
     await message.answer(reply)
 
 
-# users.join_requests
+# users.requests
 
 @dp.message_handler(commands=['accept'])
 @dp.throttled(throttling, rate=1)
@@ -144,7 +145,7 @@ async def remove(message):
     await message.answer(reply)
 
 
-# queues.manage_queues
+# queues.manage
 
 @dp.message_handler(commands=['create_queue'])
 @dp.throttled(throttling, rate=1)
@@ -191,6 +192,16 @@ async def skip(message):
 @authorization
 async def quit_queue(message):
     reply = await manage.quit_queue(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['remove_from_queue'])
+@dp.throttled(throttling, rate=1)
+async def remove_from_queue(message):
+    if message['from']['id'] not in administrators:
+        reply = 'Allowed only for administrators.'
+    else:
+        reply = await manage.remove_from_queue(message)
     await message.answer(reply)
 
 

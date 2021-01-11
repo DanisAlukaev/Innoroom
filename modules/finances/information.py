@@ -17,7 +17,7 @@ async def get_my_debts(message):
 
     # amount of money user owes
     total_debts = 0
-    message_details = 'Your debt to the\n'
+    message_details = ''
     for debt in debts:
         value_debt = int(debt['value'])
         if value_debt != 0:
@@ -25,8 +25,10 @@ async def get_my_debts(message):
             total_debts += value_debt
             # get information about the creditor
             creditor = await queries.get_user_by_id(debt['creditor_id'])
-            message_details += creditor['name'] + ' ' + creditor['surname'] + ' is ' + str(value_debt) + '\n'
-    message_total = name + ', your debt in total is ' + str(total_debts) + '.\n' + message_details
+            message_details += '• <b>' + creditor['name'] + ' ' + creditor['surname'] + '</b> is ' + str(value_debt) + '\n'
+    if message_details:
+        message_details = 'Your debt to the\n' + message_details
+    message_total = name + ', your debt in total is ' + str(total_debts) + '.\n\n' + message_details
     return message_total
 
 
@@ -46,7 +48,7 @@ async def get_my_services(message):
 
     # amount of money shared with all users
     total_services = 0
-    message_details = 'Your service for the\n'
+    message_details = ''
     for credit in credits:
         value_credit = int(credit['value'])
         if value_credit != 0:
@@ -54,6 +56,8 @@ async def get_my_services(message):
             total_services += value_credit
             # get information about the debtor
             debtor = await queries.get_user_by_id(credit['debtor_id'])
-            message_details += debtor['name'] + ' ' + debtor['surname'] + ' is ' + str(value_credit) + '\n'
-    message_total = name + ', your service in total is ' + str(total_services) + '.\n' + message_details
+            message_details += '• <b>' + debtor['name'] + ' ' + debtor['surname'] + '</b> is ' + str(value_credit) + '\n'
+    if message_details:
+        message_details = 'Your service for the\n' + message_details
+    message_total = name + ', your service in total is ' + str(total_services) + '.\n\n' + message_details
     return message_total

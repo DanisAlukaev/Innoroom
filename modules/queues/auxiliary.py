@@ -1,4 +1,5 @@
 from misc import queries
+import logging
 
 
 async def get_users_in_queue_ordered(title):

@@ -30,18 +30,20 @@ class Queries:
     # table members
 
     JOIN_QUEUE = "INSERT INTO members(user_id, queue_id) VALUES ($1, $2)"
-    REMOVE_MEMBER = "DELETE FROM members WHERE user_id = (SELECT id FROM users WHERE uid = $1)"
-    GET_USERS_IN_QUEUE = "SELECT * FROM users WHERE id = (SELECT user_id FROM members WHERE queue_id = " \
-                         "(SELECT id FROM queues WHERE title = $1))"
+    REMOVE_MEMBER = "DELETE FROM members WHERE user_id = (SELECT id FROM users WHERE uid = $1) and " \
+                    "queue_id = (SELECT id FROM queues WHERE title = $2)"
+    GET_USERS_IN_QUEUE = "SELECT id, uid, alias, name, surname, request FROM (users LEFT JOIN members ON users.id" \
+                         " = members.user_id) WHERE queue_id = (SELECT id FROM queues WHERE title = $1)"
     GET_CURRENT_USER_INDEX = "SELECT curr_user FROM queues WHERE title = $1"
-    CHANGE_SKIPS_FOR_USER = "UPDATE members SET skips = $1 WHERE user_id = (SELECT id FROM users WHERE uid = $2)"
+    CHANGE_SKIPS_FOR_USER = "UPDATE members SET skips = $1 WHERE user_id = (SELECT id FROM users WHERE uid = $2) and " \
+                            "queue_id = (SELECT id FROM queues WHERE title = $3)"
     CHANGE_NEXT_USER = "UPDATE queues SET curr_user = $1 WHERE title = $2"
-    GET_SKIPS_FOR_USER = "SELECT skips FROM members WHERE user_id = (SELECT id FROM users WHERE uid = $1)"
+    GET_SKIPS_FOR_USER = "SELECT skips FROM members WHERE user_id = (SELECT id FROM users WHERE uid = $1) and " \
+                         "queue_id = (SELECT id FROM queues WHERE title = $2)"
 
     # table debts
 
-    CREATE_ZERO_DEBT = "INSERT INTO debts(debtor_id, creditor_id, value) " \
-                       "VALUES ((SELECT id FROM users WHERE uid = $1), (SELECT id FROM users WHERE uid = $2), 0)"
+    CREATE_ZERO_DEBT = "INSERT INTO debts(debtor_id, creditor_id, value) VALUES ($1, $2, 0)"
     GET_DEBTS = "SELECT * FROM debts WHERE debtor_id = (SELECT id FROM users WHERE uid = $1)"
     GET_DEBT = "SELECT value FROM debts WHERE debtor_id = (SELECT id FROM users WHERE uid = $1) and " \
                "creditor_id = (SELECT id FROM users WHERE uid = $2)"
@@ -133,8 +135,9 @@ class Queries:
         args = user_id, queue_id
         await self.pool.fetch(self.JOIN_QUEUE, *args)
 
-    async def quit_queue(self, uid):
-        await self.pool.fetch(self.REMOVE_MEMBER, uid)
+    async def quit_queue(self, uid, title):
+        args = uid, title
+        await self.pool.fetch(self.REMOVE_MEMBER, *args)
 
     async def get_users_in_queue(self, title):
         users = await self.pool.fetch(self.GET_USERS_IN_QUEUE, title)
@@ -144,16 +147,17 @@ class Queries:
         index = int((await self.pool.fetch(self.GET_CURRENT_USER_INDEX, title))[0]['curr_user'])
         return index
 
-    async def change_skips_for_user(self, skips, uid):
-        args = skips, uid
+    async def change_skips_for_user(self, skips, uid, title):
+        args = skips, uid, title
         await self.pool.fetch(self.CHANGE_SKIPS_FOR_USER, *args)
 
     async def change_next_user(self, index, title):
         args = index, title
         await self.pool.fetch(self.CHANGE_NEXT_USER, *args)
 
-    async def get_skips_for_user(self, uid):
-        skips = await self.pool.fetch(self.GET_SKIPS_FOR_USER, uid)
+    async def get_skips_for_user(self, uid, title):
+        args = uid, title
+        skips = int((await self.pool.fetch(self.GET_SKIPS_FOR_USER, *args))[0]['skips'])
         return skips
 
     # table debts

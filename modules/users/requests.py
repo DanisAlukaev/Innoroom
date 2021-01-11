@@ -47,15 +47,14 @@ async def accept(message):
             message_accept = name + ', you have added new user(s)\n'
             for alias in aliases:
                 # accept request
-
-                id_new_user = await queries.get_user_by_alias(alias)['id']
+                await queries.accept_request(alias)
+                id_new_user = (await queries.get_user_by_alias(alias))['id']
                 users = await queries.get_users()
                 for user in users:
-                    id_old_user = user['id']
-                    await queries.create_zero_debt(id_new_user, id_old_user)
-                    await queries.create_zero_debt(id_old_user, id_new_user)
-
-                await queries.accept_request(alias)
+                    if user['id'] != id_new_user:
+                        id_old_user = user['id']
+                        await queries.create_zero_debt(id_new_user, id_old_user)
+                        await queries.create_zero_debt(id_old_user, id_new_user)
                 message_accept += '• @' + alias + '\n'
         else:
             # some aliases fail validation
