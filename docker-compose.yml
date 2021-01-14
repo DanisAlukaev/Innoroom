@@ -23,7 +23,10 @@ services:
       - "db"
     build:
       context: .
+    volumes:
+      - .:/src
     command: python bot.py
     restart: always
+    network_mode: "host"
     env_file:
       - ".env"
