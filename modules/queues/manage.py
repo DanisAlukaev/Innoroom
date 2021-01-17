@@ -189,7 +189,7 @@ async def next_user(message):
                         # get number of skips
                         skips = await queries.get_skips_for_user(user['uid'], title)
 
-                        if skips == 0:
+                        if skips <= 0:
                             # user had not skipped turns
 
                             # pass turn to next user
@@ -204,6 +204,72 @@ async def next_user(message):
                     else:
                         # now it is not turn of sender
                         message_next_user = '@' + alias + ', it is not your turn.'
+                else:
+                    # there are no users in queue
+                    message_next_user = 'Queue is empty.'
+            else:
+                message_next_user = '@' + alias + ', you are out of this queue.'
+        else:
+            # there is no queue with given title
+            message_next_user = 'Queue with specified title does not exist.'
+    else:
+        # message fails to parse
+        message_next_user = 'Message does not match the required format. Check rules in /help.'
+    return message_next_user
+
+
+async def add_progress(message):
+    """
+    Adds -1 to skip counter.
+
+    :param message: user's message.
+    :return: reply.
+    """
+    # get information about the user
+    uid = message['from']['id']
+    alias = message['from']['username']
+
+    if re.fullmatch(r'/add_progress \w+', message['text'].replace('\n', '')):
+        # message is properly formatted
+
+        # get title of queue
+        title = message['text'].split(' ')[1]
+        # access table queues
+        queues = await queries.get_queues()
+        # get queues' titles
+        titles = [queue['title'] for queue in queues]
+
+        if title in titles:
+            # queue with specified title exists
+
+            # get queues of user
+            user_queues = await queries.get_my_queues(uid)
+            # get titles of user queues
+            user_titles = [queue['title'] for queue in user_queues]
+
+            if title in user_titles:
+
+                # get ordered list of users in queues
+                users_ordered = await auxiliary.get_users_in_queue_ordered(title)
+
+                if len(users_ordered) != 0:
+                    # queue is non-empty
+
+                    # get index of a current user in a queue in list
+                    current_index = await queries.get_current_user_index(title)
+                    # get current user
+                    user = users_ordered[int(current_index)]
+
+                    # get number of skips
+                    skips = await queries.get_skips_for_user(user['uid'], title)
+                    skips -= 1
+                    await queries.change_skips_for_user(skips, user['uid'], title)
+                    message_next_user = '@' + alias + ', you have added -1 to your skip counter.'
+                    if skips < 0:
+                        # pass turn to next user
+                        current_index = (int(current_index) + 1) % len(users_ordered)
+                        await queries.change_next_user(current_index, title)
+                        message_next_user = 'Because your skip counter is below 0, turn went to @' + users_ordered[current_index]['alias'] + '.'
                 else:
                     # there are no users in queue
                     message_next_user = 'Queue is empty.'

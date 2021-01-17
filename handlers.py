@@ -45,6 +45,7 @@ async def help_message(message):
         "/my_queues - get your queues\n"
         "/current_user <b>title</b> - get a user whose turn is it now\n"
         "/next_user <b>title</b> - pass turn to next user\n"
+        "/add_progress <b>title</b> - add -1 to your skip counter regardless of who's turn is now\n"
         "/skip <b>title</b> - skip your turn\n"
         "/get_states - get states of all queues\n\n"
         "<b>Debts</b>\n"
