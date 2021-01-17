@@ -50,6 +50,76 @@ async def my_queues(message):
     return message_my_queues
 
 
+async def get_state(message):
+    """
+    Get states of all queues.
+
+    :param message: user's message.
+    :return: reply.
+    """
+    if re.fullmatch(r'/get_state \w+', message['text'].replace('\n', '')):
+        # message is properly formatted
+
+        # get title of queue
+        title = message['text'].split(' ')[1]
+        # access table queues
+        queues = await queries.get_queues()
+        # get queues' titles
+        titles = [queue['title'] for queue in queues]
+
+        if title in titles:
+            # queue with specified title exists
+            queue = await queries.get_queue_by_title(title)
+            message_state = ''
+            # get ordered list of users in queues
+            users_ordered = await auxiliary.get_users_in_queue_ordered(queue['title'])
+
+            message_state += 'Queue <b>' + queue['title']
+            if len(users_ordered) == 0:
+                message_state += '</b> is empty.\n'
+            else:
+                message_state += ':</b>\n'
+
+            for user in users_ordered:
+                # get information about all users in queue
+
+                # get index of current user
+                current_user_index = queue['curr_user']
+                # get number of skips
+                skips = await queries.get_skips_for_user(user['uid'], queue['title'])
+
+                if current_user_index == users_ordered.index(user):
+                    # underline text for a current user
+                    message_state += '• <u>' + user['name'] + ' ' + user['surname'] + '</u> : ' + str(skips) + ' skips\n'
+                else:
+                    message_state += '• ' + user['name'] + ' ' + user['surname'] + ' : ' + str(skips) + ' skips\n'
+            message_state += '\n'
+        else:
+            # there is no queue with given title
+            message_state = 'Queue with specified title does not exist.'
+    else:
+        # message fails to parse
+        message_state = 'Message does not match the required format. Check rules in /help.'
+    return message_state
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async def get_states(message):
     """
     Get states of all queues.

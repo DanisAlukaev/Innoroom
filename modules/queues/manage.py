@@ -1,7 +1,6 @@
 from misc import queries
 from modules.queues import auxiliary
 import re
-import logging
 
 
 async def create_queue(message):
@@ -11,23 +10,23 @@ async def create_queue(message):
     :param message: user's message.
     :return: reply.
     """
-    if re.fullmatch(r'/create_queue \w+', message['text'].replace('\n', '')):
+    if re.fullmatch(r'/create_queue( \w+)+', message['text'].replace('\n', '')):
         # message is properly formatted
 
-        # get title of queue
-        title = message['text'].split(' ')[1]
-        # access table queues
-        queues = await queries.get_queues()
-        # get queues' titles
-        titles = [queue['title'] for queue in queues]
+        # get parsed titles and aliases that were failed to validate
+        titles = message['text'].split(' ')[1:]
+        titles, fail_validation, fail_validation_str = await auxiliary.check_absence_queues(titles)
 
-        if title not in titles:
-            # create new queue
-            await queries.create_queue(title)
-            message_create_queue = 'Queue <b>' + title + '</b> was created.'
+        if len(fail_validation) == 0:
+            created = ''
+            for title_ in titles:
+                # create new queue
+                await queries.create_queue(title_)
+                created += title_ + ' '
+            message_create_queue = 'Queue(s) <b>' + created + '</b>was/were created.'
         else:
             # there is no queue with given title
-            message_create_queue = 'Queue with specified title is already exists.'
+            message_create_queue = 'Queue(s) ' + fail_validation_str + 'is/are already exist(s).'
     else:
         # message fails to parse
         message_create_queue = 'Message does not match the required format. Check rules in /help.'
@@ -43,66 +42,56 @@ async def join_queue(message):
     """
     # get information about the user
     uid = message['from']['id']
-    alias = message['from']['username']
+    name = message['from']['first_name']
 
-    if re.fullmatch(r'/join_queue \w+', message['text'].replace('\n', '')):
+    if re.fullmatch(r'/join_queue( \w+)+', message['text'].replace('\n', '')):
         # message is properly formatted
 
-        # get title of queue
-        title = message['text'].split(' ')[1]
-        # access table queues
-        queues = await queries.get_queues()
-        # get queues' titles
-        titles = [queue['title'] for queue in queues]
+        # get parsed titles and aliases that were failed to validate
+        titles = message['text'].split(' ')[1:]
+        titles, fail_validation, fail_validation_str = await auxiliary.check_presence_queues(titles)
 
-        if title in titles:
-            # queue with specified title exists
+        if len(fail_validation) == 0:
 
-            # get queues of user
-            user_queues = await queries.get_my_queues(uid)
-            # get titles of user queues
-            user_titles = [queue['title'] for queue in user_queues]
+            titles, fail_validation, fail_validation_str = await auxiliary.check_presence_for_user(titles, uid)
 
-            if title not in user_titles:
-                # user is out of queue
+            if len(fail_validation) == 0:
 
-                # get ordering before adding
-                sorted_user_prev = await auxiliary.get_users_in_queue_ordered(title)
+                added = ''
+                for title in titles:
+                    # user is out of queue
 
-                logging.info(sorted_user_prev)
+                    # get ordering before adding
+                    sorted_user_prev = await auxiliary.get_users_in_queue_ordered(title)
 
-                # get id of queue in members table
-                queue_id = (await queries.get_queue_id_by_title(title))['id']
-                # get id of user in users in table
-                user_id = (await queries.get_user_by_uid(uid))['id']
-                # join queue
-                await queries.join_queue(user_id, queue_id)
+                    # get id of queue in members table
+                    queue_id = (await queries.get_queue_id_by_title(title))['id']
+                    # get id of user in users in table
+                    user_id = (await queries.get_user_by_uid(uid))['id']
+                    # join queue
+                    await queries.join_queue(user_id, queue_id)
 
-                # get index of a current user in a queue in list
-                current_index = await queries.get_current_user_index(title)
+                    # get index of a current user in a queue in list
+                    current_index = await queries.get_current_user_index(title)
 
-                if sorted_user_prev:
-                    # get id of a current user
-                    curr_user = sorted_user_prev[current_index]
-                    # get added user
-                    user = await queries.get_user_by_uid(uid)
-                    # get ordering after adding
-                    sorted_user_after = await auxiliary.get_users_in_queue_ordered(title)
+                    if sorted_user_prev:
+                        # get id of a current user
+                        curr_user = sorted_user_prev[current_index]
+                        # get added user
+                        user = await queries.get_user_by_uid(uid)
+                        # get ordering after adding
+                        sorted_user_after = await auxiliary.get_users_in_queue_ordered(title)
 
-                    logging.info(sorted_user_after.index(user))
-                    logging.info(sorted_user_after.index(curr_user))
-
-                    if sorted_user_after.index(user) < sorted_user_after.index(curr_user):
-                        logging.info('Here')
-                        await queries.change_next_user(current_index + 1, title)
-
-                message_join_queue = '@' + alias + ', you are now in the queue <b>' + title + '</b>.'
+                        if sorted_user_after.index(user) < sorted_user_after.index(curr_user):
+                            await queries.change_next_user(current_index + 1, title)
+                    added += title + ' '
+                message_join_queue = name + ', you are now in the queue(s) <b>' + added + '</b>'
             else:
                 # user is in queue
-                message_join_queue = '@' + alias + ', you are already in this queue.'
+                message_join_queue = name + ', you are already in queue(s) ' + fail_validation_str
         else:
             # there is no queue with given title
-            message_join_queue = 'Queue with specified title does not exist.'
+            message_join_queue = 'Queue(s) ' + fail_validation_str + 'do(es) not exist.'
     else:
         # message fails to parse
         message_join_queue = 'Message does not match the required format. Check rules in /help.'
@@ -150,7 +139,7 @@ async def next_user(message):
     """
     # get information about the user
     uid = message['from']['id']
-    alias = message['from']['username']
+    name = message['from']['first_name']
 
     if re.fullmatch(r'/next_user \w+', message['text'].replace('\n', '')):
         # message is properly formatted
@@ -195,20 +184,21 @@ async def next_user(message):
                             # pass turn to next user
                             current_index = (int(current_index) + 1) % len(users_ordered)
                             await queries.change_next_user(current_index, title)
-                            message_next_user = 'Turn went to @' + users_ordered[current_index]['alias'] + '.'
+                            message_next_user = 'Turn in the queue ' + title + \
+                                                ' went to @' + users_ordered[current_index]['alias'] + '.'
                         else:
                             # eliminate one skip
                             skips -= 1
                             await queries.change_skips_for_user(skips, user['uid'], title)
-                            message_next_user = '@' + alias + ', you have eliminated your skip.'
+                            message_next_user = name + ', you have eliminated your skip.'
                     else:
                         # now it is not turn of sender
-                        message_next_user = '@' + alias + ', it is not your turn.'
+                        message_next_user = name + ', it is not your turn.'
                 else:
                     # there are no users in queue
                     message_next_user = 'Queue is empty.'
             else:
-                message_next_user = '@' + alias + ', you are out of this queue.'
+                message_next_user = name + ', you are out of this queue.'
         else:
             # there is no queue with given title
             message_next_user = 'Queue with specified title does not exist.'
@@ -227,7 +217,7 @@ async def add_progress(message):
     """
     # get information about the user
     uid = message['from']['id']
-    alias = message['from']['username']
+    name = message['from']['first_name']
 
     if re.fullmatch(r'/add_progress \w+', message['text'].replace('\n', '')):
         # message is properly formatted
@@ -264,17 +254,18 @@ async def add_progress(message):
                     skips = await queries.get_skips_for_user(user['uid'], title)
                     skips -= 1
                     await queries.change_skips_for_user(skips, user['uid'], title)
-                    message_next_user = '@' + alias + ', you have added -1 to your skip counter.'
+                    message_next_user = name + ', you have added -1 to your skip counter.'
                     if skips < 0:
                         # pass turn to next user
                         current_index = (int(current_index) + 1) % len(users_ordered)
                         await queries.change_next_user(current_index, title)
-                        message_next_user = 'Because your skip counter is below 0, turn went to @' + users_ordered[current_index]['alias'] + '.'
+                        message_next_user = 'Because your skip counter is below 0, turn went to @' + \
+                                            users_ordered[current_index]['alias'] + '.'
                 else:
                     # there are no users in queue
                     message_next_user = 'Queue is empty.'
             else:
-                message_next_user = '@' + alias + ', you are out of this queue.'
+                message_next_user = name + ', you are out of this queue.'
         else:
             # there is no queue with given title
             message_next_user = 'Queue with specified title does not exist.'
@@ -293,7 +284,7 @@ async def skip(message):
     """
     # get information about the user
     uid = message['from']['id']
-    alias = message['from']['username']
+    name = message['from']['first_name']
 
     if re.fullmatch(r'/skip \w+', message['text'].replace('\n', '')):
         # message is properly formatted
@@ -338,12 +329,12 @@ async def skip(message):
                         # update current index
                         current_index = (int(current_index) + 1) % len(users_ordered)
                         await queries.change_next_user(current_index, title)
-                        message_skip = '@' + alias + ', you have skipped your turn.'
+                        message_skip = name + ', you have skipped your turn.'
                     else:
                         # now it is not turn of sender
-                        message_skip = '@' + alias + ', now it is not your turn.'
+                        message_skip = name + ', now it is not your turn.'
                 else:
-                    message_skip = '@' + alias + ', you are out of this queue.'
+                    message_skip = name + ', you are out of this queue.'
             else:
                 # there are no users in queue
                 message_skip = 'Queue is empty.'
@@ -356,6 +347,67 @@ async def skip(message):
     return message_skip
 
 
+async def set_current(message):
+    """
+    Skip the turn for a current user in a queue.
+
+    :param message: user's message.
+    :return: reply.
+    """
+    # get information about the user
+    uid = message['from']['id']
+    name = message['from']['first_name']
+
+    if re.fullmatch(r'/set_current \w+ @\w+', message['text'].replace('\n', '')):
+        # message is properly formatted
+
+        parsed_message = message['text'].replace('\n', '').replace('@', '').split(' ')
+        # get title of queue
+        title = parsed_message[1]
+        # get alias of specified user
+        alias = parsed_message[2]
+
+        # access table queues
+        queues = await queries.get_queues()
+        # get queues' titles
+        titles = [queue['title'] for queue in queues]
+
+        if title in titles:
+            # queue with specified title exists
+
+            user_ = await queries.get_user_by_alias(alias)
+            # get queues of user
+            user_queues = await queries.get_my_queues(user_['uid'])
+            # get titles of user queues
+            user_titles = [queue['title'] for queue in user_queues]
+
+            if title in user_titles:
+
+                # get ordered list of users in queues
+                users_ordered = await auxiliary.get_users_in_queue_ordered(title)
+
+                if len(users_ordered) != 0:
+                    # queue is non-empty
+
+                    # get index of specified user
+                    current_index = users_ordered.index(user_)
+                    # set current index to user
+                    await queries.change_next_user(current_index, title)
+                    message_set = 'Turn in the queue <b>' + title + '</b> went to @' + alias + '.'
+                else:
+                    # there are no users in queue
+                    message_set = 'Queue is empty.'
+            else:
+                message_set = '@' + alias + ' is out of the queue <b>' + title + '</b>.'
+        else:
+            # there is no queue with given title
+            message_set = 'Queue with specified title does not exist.'
+    else:
+        # message fails to parse
+        message_set = 'Message does not match the required format. Check rules in /help.'
+    return message_set
+
+
 async def quit_queue(message):
     """
     Quit from the queue.
@@ -365,7 +417,7 @@ async def quit_queue(message):
     """
     # get information about the user
     uid = message['from']['id']
-    alias = message['from']['username']
+    name = message['from']['first_name']
 
     if re.fullmatch(r'/quit_queue \w+', message['text'].replace('\n', '')):
         # message is properly formatted
@@ -398,9 +450,9 @@ async def quit_queue(message):
                     # handle index out of range situations
                     await queries.change_next_user(0, title)
 
-                message_quit_queue = '@' + alias + ', you are now out of the queue <b>' + title + '</b>.'
+                message_quit_queue = name + ', you are now out of the queue <b>' + title + '</b>.'
             else:
-                message_quit_queue = '@' + alias + ', you are currently out of this queue.'
+                message_quit_queue = name + ', you are currently out of this queue.'
         else:
             # there is no queue with given title
             message_quit_queue = 'Queue with specified title does not exist.'

@@ -1,5 +1,6 @@
 from misc import queries
 from modules.users import auxiliary
+import config
 import re
 
 
@@ -127,6 +128,38 @@ async def remove_user(message):
         else:
             # some aliases fail validation
             message_remove_user = 'User(s) with alias(es) ' + fail_verification_str + 'is(are) not user(s) of the bot.'
+    else:
+        # message fails to parse
+        message_remove_user = 'Message does not match the required format. Check rules in /help.'
+    return message_remove_user
+
+
+async def new_admin(message):
+    """
+    Remove user of the bot.
+
+    :param message: user's message.
+    :return: reply.
+    """
+    # get name of user
+    name = message['from']['first_name']
+
+    if re.fullmatch(r'/new_admin @\w+', message['text'].replace('\n', '')):
+        # message is properly formatted
+
+        # get request
+        request_message = message['text'].replace('@', '').split(' ')
+        # get alias of user to be removed
+        alias = request_message[1]
+        # get user to be removed
+        user = await queries.get_user_by_alias(alias)
+        uid = user['uid']
+
+        if uid not in config.administrators:
+            config.administrators.append(uid)
+        else:
+            return 'User with specified alias is already an administrator.'
+        message_remove_user = '@' + alias + ', you are now an administrator of the bot.'
     else:
         # message fails to parse
         message_remove_user = 'Message does not match the required format. Check rules in /help.'

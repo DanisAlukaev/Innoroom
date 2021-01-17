@@ -26,27 +26,28 @@ async def help_message(message):
         "Telegram-bot for the daily routine of our room in the dormitories of Innopolis.\n\n"
         "You can control me by sending these commands:\n\n"
         "<b>Manage bot</b> (only for administrators)\n"
+        "/new_admin <b>username</b> - make the specified user an administrator"
         "/accept <b>username</b> [...] - accept request(s) to join\n"
         "/decline <b>username</b> [...] - decline request(s) to join\n"
         "/all_requests - get all pending requests to join\n"
         "/remove <b>username</b> [...] - remove user(s)\n"
-        "/remove_from_queue <b>username</b> <b>title</b> = remove user from specified queue\n\n"
+        "/set_current <b>title</b> <b>username</b> - set user as current in specified queue\n"
+        "/remove_from_queue <b>username</b> <b>title</b> - remove user from specified queue\n\n"
         "<b>Profile control</b>\n"
         "/join_bot - send request to join\n"
         "/me - get user information\n"
-        "/update_me - automatically update your name, surname, username\n"
-        "/leave - leave bot\n\n"
+        "/update_me - automatically update your name, surname, username\n\n"
         "<b>Queues</b>\n"
         "/create_queue <b>title</b> - сreate new queue\n"
         "/remove_queue <b>title</b> - remove the queue\n"
-        "/join_queue <b>title</b> - join the queue\n"
-        "/quit_queue <b>title</b> - quit the queue\n"
+        "/join_queue <b>title</b> [...] - join the queue\n"
         "/get_queues - get existing queues\n"
         "/my_queues - get your queues\n"
         "/current_user <b>title</b> - get a user whose turn is it now\n"
         "/next_user <b>title</b> - pass turn to next user\n"
         "/add_progress <b>title</b> - add -1 to your skip counter regardless of who's turn is now\n"
         "/skip <b>title</b> - skip your turn\n"
+        "/get_state <b>title</b> - get state of specified queue\n\n"
         "/get_states - get states of all queues\n\n"
         "<b>Debts</b>\n"
         "/give <b>money</b> <b>username</b> [...] - give money to specified user(s)\n"
@@ -68,6 +69,16 @@ def authorization(func):
         return await func(message)
 
     return wrapper
+
+
+@dp.message_handler(commands=['new_admin'])
+@dp.throttled(throttling, rate=1)
+async def new_admin(message):
+    if message['from']['id'] not in administrators:
+        reply = 'Allowed only for administrators.'
+    else:
+        reply = await requests.new_admin(message)
+    await message.answer(reply)
 
 
 # users.profile
@@ -93,14 +104,6 @@ async def me(message):
 @dp.throttled(throttling, rate=1)
 async def join_bot(message):
     reply = await interact.join_bot(message)
-    await message.answer(reply)
-
-
-@dp.message_handler(commands=['leave'])
-@dp.throttled(throttling, rate=1)
-@authorization
-async def leave(message):
-    reply = await interact.leave(message)
     await message.answer(reply)
 
 
@@ -152,7 +155,10 @@ async def remove(message):
 @dp.throttled(throttling, rate=1)
 @authorization
 async def create_queue(message):
-    reply = await manage.create_queue(message)
+    if message['from']['id'] not in administrators:
+        reply = 'Allowed only for administrators.'
+    else:
+        reply = await manage.create_queue(message)
     await message.answer(reply)
 
 
@@ -168,7 +174,10 @@ async def join_queue(message):
 @dp.throttled(throttling, rate=1)
 @authorization
 async def remove_queue(message):
-    reply = await manage.remove_queue(message)
+    if message['from']['id'] not in administrators:
+        reply = 'Allowed only for administrators.'
+    else:
+        reply = await manage.remove_queue(message)
     await message.answer(reply)
 
 
@@ -188,11 +197,19 @@ async def skip(message):
     await message.answer(reply)
 
 
-@dp.message_handler(commands=['quit_queue'])
+@dp.message_handler(commands=['set_current'])
 @dp.throttled(throttling, rate=1)
 @authorization
-async def quit_queue(message):
-    reply = await manage.quit_queue(message)
+async def set_current(message):
+    reply = await manage.set_current(message)
+    await message.answer(reply)
+
+
+@dp.message_handler(commands=['add_progress'])
+@dp.throttled(throttling, rate=1)
+@authorization
+async def skip(message):
+    reply = await manage.add_progress(message)
     await message.answer(reply)
 
 
@@ -222,6 +239,14 @@ async def get_queues(message):
 async def my_queues(message):
     reply = await information_queues.my_queues(message)
     return await message.reply(reply)
+
+
+@dp.message_handler(commands=['get_state'])
+@dp.throttled(throttling, rate=1)
+@authorization
+async def get_state(message):
+    reply = await information_queues.get_state(message)
+    await message.answer(reply)
 
 
 @dp.message_handler(commands=['get_states'])

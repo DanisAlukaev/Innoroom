@@ -22,6 +22,7 @@ class Queries:
 
     CREATE_QUEUE = "INSERT INTO queues(title) VALUES ($1)"
     GET_QUEUES = "SELECT * FROM queues ORDER BY title"
+    GET_QUEUE_BY_TITLE = "SELECT * FROM queues WHERE title = ($1)"
     GET_QUEUE_ID_BY_TITLE = "SELECT id FROM queues WHERE title = $1"
     GET_MY_QUEUES = "SELECT title FROM (queues LEFT JOIN members ON queues.id = members.queue_id) WHERE user_id = " \
                     "(SELECT id FROM users WHERE uid = $1) ORDER BY title"
@@ -117,6 +118,10 @@ class Queries:
     async def get_queues(self):
         queues = await self.pool.fetch(self.GET_QUEUES)
         return queues
+
+    async def get_queue_by_title(self, title):
+        queue = (await self.pool.fetch(self.GET_QUEUE_BY_TITLE, title))[0]
+        return queue
 
     async def get_queue_id_by_title(self, title):
         queue = (await self.pool.fetch(self.GET_QUEUE_ID_BY_TITLE, title))[0]
