@@ -77,3 +77,5 @@ async def check_presence_for_user(titles, uid):
             fail_validation.append(title_)
             fail_validation_str += title_ + ' '
     return titles, fail_validation, fail_validation_str
+
+

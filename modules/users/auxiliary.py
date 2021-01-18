@@ -30,6 +30,8 @@ async def user_data_to_string(uid):
     :return: serialized profile.
     """
     user = await queries.get_user_by_uid(uid)
+    if not user:
+        return 'Error.'
     if user['request'] == 'pending':
         profile = '<b>Request profile:</b>\n'
     else:

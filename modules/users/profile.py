@@ -15,17 +15,16 @@ async def update_me(message):
     name = message['from']['first_name']
     surname = message['from']['last_name']
 
-    if len(await queries.get_user_by_uid(uid)) != 0:
-        # user with given id exists
+    user = await queries.get_user_by_uid(uid)
+    if not user:
+        return 'Send the request first.'
 
-        # update alias, name, surname of user
-        await queries.update_alias(alias, uid)
-        await queries.update_name(name, uid)
-        await queries.update_surname(surname, uid)
-        message_change_name = '@' + alias + ', your account was successfully updated.\n\n' + (
-            await auxiliary.user_data_to_string(uid))
-    else:
-        message_change_name = 'Send the request first.'
+    # update alias, name, surname of user
+    await queries.update_alias(alias, uid)
+    await queries.update_name(name, uid)
+    await queries.update_surname(surname, uid)
+    message_change_name = '@' + alias + ', your account was successfully updated.\n\n' + (
+        await auxiliary.user_data_to_string(uid))
     return message_change_name
 
 
@@ -44,22 +43,25 @@ async def me(message):
     # get serialized profile
     message_me = await auxiliary.user_data_to_string(uid)
     # get user queues
-    queues = await queries.get_my_queues(uid)
+    user_queues = await queries.get_my_queues(uid)
     # get all queues' titles
-    titles = [queue['title'] for queue in queues]
+    user_titles = [queue['title'] for queue in user_queues]
 
-    for title in titles:
+    for title in user_titles:
         message_my_queues += '\n• ' + title
-    if not message_my_queues:
-        # there are no queues in built string
-        message_my_queues = name + ', you did not join any queue in bot.'
-    else:
-        message_my_queues = '<b>Your queues:</b>' + message_my_queues
+
+    message_my_queues = name + ', you did not join any queue in bot.' if not message_my_queues \
+        else '<b>Your queues:</b>' + message_my_queues
     message_me += '\n\n' + message_my_queues
 
     # amount of money user owes
     total_debt = 0
     debts = await queries.get_debts(uid)
+    credits = await queries.get_credits(uid)
+
+    if not debts and credits:
+        return 'Error.'
+
     # compute total debt of user
     for debt in debts:
         value_debt = int(debt['value'])
@@ -69,7 +71,6 @@ async def me(message):
 
     # amount of money shared with all users
     total_service = 0
-    credits = await queries.get_credits(uid)
     # compute total credit of user
     for credit in credits:
         value_credit = int(credit['value'])

@@ -92,16 +92,22 @@ class Queries:
         return users
 
     async def get_user_by_uid(self, uid):
-        user = (await self.pool.fetch(self.GET_USER_BY_UID, uid))[0]
-        return user
+        response = await self.pool.fetch(self.GET_USER_BY_UID, uid)
+        if len(response) != 0:
+            return response[0]
+        return False
 
     async def get_user_by_id(self, id):
-        user = (await self.pool.fetch(self.GET_USER_BY_ID, id))[0]
-        return user
+        response = await self.pool.fetch(self.GET_USER_BY_ID, id)
+        if len(response) != 0:
+            return response[0]
+        return False
 
     async def get_user_by_alias(self, alias):
-        user = (await self.pool.fetch(self.GET_USER_BY_ALIAS, alias))[0]
-        return user
+        response = await self.pool.fetch(self.GET_USER_BY_ALIAS, alias)
+        if len(response) != 0:
+            return response[0]
+        return False
 
     async def remove_user_by_alias(self, alias):
         await self.pool.fetchval(self.REMOVE_USER_BY_ALIAS, alias)
@@ -120,12 +126,16 @@ class Queries:
         return queues
 
     async def get_queue_by_title(self, title):
-        queue = (await self.pool.fetch(self.GET_QUEUE_BY_TITLE, title))[0]
-        return queue
+        response = await self.pool.fetch(self.GET_QUEUE_BY_TITLE, title)
+        if len(response) != 0:
+            return response[0]
+        return False
 
     async def get_queue_id_by_title(self, title):
-        queue = (await self.pool.fetch(self.GET_QUEUE_ID_BY_TITLE, title))[0]
-        return queue
+        response = await self.pool.fetch(self.GET_QUEUE_ID_BY_TITLE, title)
+        if len(response) != 0:
+            return response[0]
+        return False
 
     async def get_my_queues(self, uid):
         queues = await self.pool.fetch(self.GET_MY_QUEUES, uid)
@@ -149,8 +159,10 @@ class Queries:
         return users
 
     async def get_current_user_index(self, title):
-        index = int((await self.pool.fetch(self.GET_CURRENT_USER_INDEX, title))[0]['curr_user'])
-        return index
+        response = await self.pool.fetch(self.GET_CURRENT_USER_INDEX, title)
+        if len(response) != 0:
+            return int(response[0]['curr_user'])
+        return False
 
     async def change_skips_for_user(self, skips, uid, title):
         args = skips, uid, title
@@ -162,8 +174,10 @@ class Queries:
 
     async def get_skips_for_user(self, uid, title):
         args = uid, title
-        skips = int((await self.pool.fetch(self.GET_SKIPS_FOR_USER, *args))[0]['skips'])
-        return skips
+        response = await self.pool.fetch(self.GET_SKIPS_FOR_USER, *args)
+        if len(response) != 0:
+            return int(response[0]['skips'])
+        return False
 
     # table debts
 
@@ -177,8 +191,10 @@ class Queries:
 
     async def get_debt(self, debtor_uid, creditor_uid):
         args = debtor_uid, creditor_uid
-        debt = (await self.pool.fetch(self.GET_DEBT, *args))[0]
-        return debt
+        response = await self.pool.fetch(self.GET_DEBT, *args)
+        if len(response) != 0:
+            return int(response[0])
+        return False
 
     async def update_debt(self, value, debtor_uid, creditor_uid):
         args = value, debtor_uid, creditor_uid

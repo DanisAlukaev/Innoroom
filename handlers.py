@@ -31,6 +31,8 @@ async def help_message(message):
         "/decline <b>username</b> [...] - decline request(s) to join\n"
         "/all_requests - get all pending requests to join\n"
         "/remove <b>username</b> [...] - remove user(s)\n"
+        "/create_queue <b>title</b> - сreate new queue\n"
+        "/remove_queue <b>title</b> - remove the queue\n"
         "/set_current <b>title</b> <b>username</b> - set user as current in specified queue\n"
         "/remove_from_queue <b>username</b> <b>title</b> - remove user from specified queue\n\n"
         "<b>Profile control</b>\n"
@@ -38,8 +40,6 @@ async def help_message(message):
         "/me - get user information\n"
         "/update_me - automatically update your name, surname, username\n\n"
         "<b>Queues</b>\n"
-        "/create_queue <b>title</b> - сreate new queue\n"
-        "/remove_queue <b>title</b> - remove the queue\n"
         "/join_queue <b>title</b> [...] - join the queue\n"
         "/get_queues - get existing queues\n"
         "/my_queues - get your queues\n"
@@ -47,7 +47,7 @@ async def help_message(message):
         "/next_user <b>title</b> - pass turn to next user\n"
         "/add_progress <b>title</b> - add -1 to your skip counter regardless of who's turn is now\n"
         "/skip <b>title</b> - skip your turn\n"
-        "/get_state <b>title</b> - get state of specified queue\n\n"
+        "/get_state <b>title</b> - get state of specified queue\n"
         "/get_states - get states of all queues\n\n"
         "<b>Debts</b>\n"
         "/give <b>money</b> <b>username</b> [...] - give money to specified user(s)\n"
@@ -238,7 +238,7 @@ async def get_queues(message):
 @authorization
 async def my_queues(message):
     reply = await information_queues.my_queues(message)
-    return await message.reply(reply)
+    return await message.answer(reply)
 
 
 @dp.message_handler(commands=['get_state'])

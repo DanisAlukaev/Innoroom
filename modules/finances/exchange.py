@@ -37,40 +37,36 @@ async def give(message):
     uid = message['from']['id']
     name = message['from']['first_name']
 
-    if re.fullmatch(r'/give [1-9]+[0-9]*( @\w+)+', message['text']):
-        # message is properly formatted
-
-        # get amount of give money
-        money = int(message['text'].split(' ')[1])
-        # get list of aliases from message
-        aliases_raw = message['text'].replace('@', '').split(' ')[2:]
-
-        # get parsed aliases and aliases that were failed to validate
-        aliases, fail_verification, fail_verification_str = await auxiliary.check_presence_users(aliases_raw)
-
-        if message['from']['username'] in aliases:
-            return 'You cannot lend money to yourself!'
-
-        if len(fail_verification) == 0:
-            # all aliases are in users list
-
-            # amount on money per each user
-            share_give = money / len(aliases)
-            # string with aliases of debtors
-            aliases_str = ''
-            for alias_ in aliases:
-                aliases_str += '@' + alias_ + ' '
-                # get user id of debtor
-                debtor_uid = (await queries.get_user_by_alias(alias_))['uid']
-                # update table debts
-                await _change_debts_dictionary(debtor_uid, uid, share_give)
-            message_give = name + ', you have given ' + str(share_give) + ' to ' + aliases_str
-        else:
-            # some aliases fail validation
-            message_give = 'User with alias(es) ' + fail_verification_str + 'do(es) not registered in bot.'
-    else:
+    if not re.fullmatch(r'/give [1-9]+[0-9]*( @\w+)+', message['text']):
         # message fails to parse
-        message_give = 'Message does not match the required format. Check rules in /help.'
+        return 'Message does not match the required format. Check rules in /help.'
+
+    # get amount of give money
+    money = int(message['text'].split(' ')[1])
+    # get list of aliases from message
+    aliases_raw = message['text'].replace('@', '').split(' ')[2:]
+
+    # get parsed aliases and aliases that were failed to validate
+    aliases, fail_verification, fail_verification_str = await auxiliary.check_presence_users(aliases_raw)
+
+    if message['from']['username'] in aliases:
+        return 'You cannot lend money to yourself twice!'
+
+    if len(fail_verification) != 0:
+        # some aliases fail validation
+        return 'User with alias(es) ' + fail_verification_str + 'do(es) not registered in bot.'
+
+    # amount on money per each user
+    share_give = money / (len(aliases) + 1)
+    # string with aliases of debtors
+    aliases_str = ''
+    for alias_ in aliases:
+        aliases_str += '@' + alias_ + ' '
+        # get user id of debtor
+        debtor_uid = (await queries.get_user_by_alias(alias_))['uid']
+        # update table debts
+        await _change_debts_dictionary(debtor_uid, uid, share_give)
+    message_give = name + ', you have given ' + str(share_give) + ' to ' + aliases_str
     return message_give
 
 
@@ -85,26 +81,24 @@ async def share(message):
     uid = message['from']['id']
     name = message['from']['first_name']
 
-    if re.fullmatch(r'/share [1-9]+[0-9]*', message['text']):
-        # message is properly formatted
-
-        # get amount of money from message
-        money = int(message['text'].split(' ')[1])
-        # number of users
-        users = await queries.get_users()
-        number_users = len(users)
-        # amount on money per each user
-        share_money = money / (number_users - 1)
-
-        # update table debts for all users except creditor
-        for user in users:
-            if user['uid'] != uid:
-                # all users except creditor
-                debtor_uid = user['uid']
-                # update table debts
-                await _change_debts_dictionary(debtor_uid, uid, share_money)
-        message_share = name + ', ' + str(money) + ' was shared among all users of the bot.'
-    else:
+    if not re.fullmatch(r'/share [1-9]+[0-9]*', message['text']):
         # message fails to parse
-        message_share = 'Message does not match the required format. Check rules in /help.'
+        return 'Message does not match the required format. Check rules in /help.'
+
+    # get amount of money from message
+    money = int(message['text'].split(' ')[1])
+    # number of users
+    users = await queries.get_users()
+    number_users = len(users)
+    # amount on money per each user
+    share_money = money / number_users
+
+    # update table debts for all users except creditor
+    for user in users:
+        if user['uid'] != uid:
+            # all users except creditor
+            debtor_uid = user['uid']
+            # update table debts
+            await _change_debts_dictionary(debtor_uid, uid, share_money)
+    message_share = name + ', ' + str(money) + ' was shared among all users of the bot.'
     return message_share
