@@ -233,22 +233,11 @@ async def add_progress(message):
         # there are no users in queue
         return 'Queue is empty.'
 
-    # get index of a current user in a queue in list
-    current_index = await queries.get_current_user_index(title)
-    # get current user
-    user = users_ordered[int(current_index)]
-
     # get number of skips
-    skips = await queries.get_skips_for_user(user['uid'], title)
+    skips = await queries.get_skips_for_user(uid, title)
     skips -= 1
-    await queries.change_skips_for_user(skips, user['uid'], title)
+    await queries.change_skips_for_user(skips, uid, title)
     message_next_user = name + ', you have added -1 to your skip counter.'
-    if skips < 0:
-        # pass turn to next user
-        current_index = (int(current_index) + 1) % len(users_ordered)
-        await queries.change_next_user(current_index, title)
-        message_next_user = 'Because your skip counter is below 0, turn went to @' + \
-                            users_ordered[current_index]['alias'] + '.'
     return message_next_user
 
 
